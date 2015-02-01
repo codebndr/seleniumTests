@@ -7,8 +7,8 @@ class TestHome(SeleniumTestCase):
         self.open("/")
         assert "Codebender" in self.driver.title
 
-    #tests login features
     def test_login(self):
+        """Test to ensure the login box is displayed"""
         driver = self.driver
         self.open("/")
         login_elem = driver.find_element_by_id("login_btn")    #finds login button

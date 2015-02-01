@@ -35,6 +35,7 @@ class SeleniumTestCase(object):
             # url specifies an absolute path.
             return self.driver.get(url)
         else:
+            url = url.lstrip('/')
             return self.driver.get("%s/%s" % (BASE_URL, url))
 
 
