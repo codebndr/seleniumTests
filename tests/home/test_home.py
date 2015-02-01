@@ -1,8 +1,7 @@
-from selenium import webdriver
+from codebender_testing.utils import SeleniumTestCase
 
-class TestHome:
 
-    driver = webdriver.Firefox()
+class TestHome(SeleniumTestCase):
 
     def test_navigate_home(self):
         self.driver.get("http://localhost")
