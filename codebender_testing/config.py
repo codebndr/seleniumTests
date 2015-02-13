@@ -17,3 +17,5 @@ TEST_CREDENTIALS = {
 
 TEST_PROJECT_NAME = "test_project"
 
+# How long we wait until giving up on trying to locate an element
+ELEMENT_FIND_TIMEOUT = 5

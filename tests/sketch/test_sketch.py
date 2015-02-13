@@ -11,11 +11,9 @@ import pytest
 from codebender_testing.utils import SeleniumTestCase
 
 
-# How long to wait before we give up on the 'verify' command (in seconds)
+# How long to wait before we give up on trying to assess the result of commands
 VERIFY_TIMEOUT = 10
-
-# How long to wait before we give up on finding an element on the page.
-ELEMENT_FIND_TIMEOUT = 5
+FLASH_TIMEOUT = 2
 
 # Board to test for the dropdown selector.
 TEST_BOARD = "Arduino Fio"
@@ -32,7 +30,7 @@ class TestSketch(SeleniumTestCase):
         # I get a StaleElementReferenceException without
         # this wait. TODO: figure out how to get around this.
         time.sleep(3)
-    
+ 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
         compile_button = self.driver.find_element_by_id("compile")
@@ -46,15 +44,22 @@ class TestSketch(SeleniumTestCase):
     def test_boards_dropdown(self):
         """Tests that the boards dropdown is present, and that we can change
         the board successfully."""
-        WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
-            expected_conditions.presence_of_element_located(
-            (By.ID, "boards"))
-        )
-
-        boards_dropdown = Select(self.driver.find_element_by_id("boards"))
+        boards_dropdown = Select(self.get_element(By.ID, "boards"))
 
         # Click something other than the first option
         boards_dropdown.select_by_visible_text(TEST_BOARD)
 
         assert boards_dropdown.first_selected_option.text == TEST_BOARD
 
+    def test_ports_dropdown(self):
+        """Ensures that the ports dropdown exists."""
+        self.get_element(By.ID, "ports")
+
+    def test_run_with_no_port(self):
+        """Makes sure that there is an error when we attempt to run with no
+        port selected."""
+        flash_button = self.get_element(By.ID, "usbflash")
+        flash_button.click()
+        WebDriverWait(self.driver, FLASH_TIMEOUT).until(
+            expected_condiditons.text_to_be_present_in_element(
+                (By.ID, "operation_output"), "Please select a valid port or enable the plugin!!"))

@@ -3,13 +3,15 @@ import re
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.ui import WebDriverWait
 import pytest
 
 from codebender_testing.config import BASE_URL
+from codebender_testing.config import ELEMENT_FIND_TIMEOUT
 from codebender_testing.config import TEST_CREDENTIALS
 from codebender_testing.config import TEST_PROJECT_NAME
 from codebender_testing.config import WEBDRIVERS
-
 
 
 class SeleniumTestCase(object):
@@ -71,3 +73,10 @@ class SeleniumTestCase(object):
             # 'Log In' is not displayed, so we're already logged in.
             pass
 
+    def get_element(self, *locator):
+        """Waits for an element specified by *locator (a tuple of
+        (By.<something>, str)), then returns it if it is found."""
+        WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
+            expected_conditions.presence_of_element_located(locator))
+        return self.driver.find_element(*locator)
+        
