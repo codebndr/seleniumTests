@@ -34,12 +34,32 @@ class TestHome(SeleniumTestCase):
         error_elem = driver.find_element_by_class_name('text-error')
         assert error_elem.is_displayed() 
 
+        """ tests login with invalid password """
+        # refresh page so error message no longer visible
+        driver.refresh()
+
+        # re-click on login button
+        login_elem = driver.find_element_by_id("login_btn")
+        login_elem.send_keys(Keys.RETURN) 
+ 
+        # re-define elements in login form 
+        username_elem = driver.find_element_by_id("username")
+        password_elem = driver.find_element_by_id("password")
+        submit_elem = driver.find_element_by_id("_submit")
+         
+        # enter correct username with invalid password
+        username_elem.send_keys(TEST_CREDENTIALS['username'])
+        password_elem.send_keys("codebender")
+        submit_elem.click()
+
+        # re-define error message element and test
+        error_elem = driver.find_element_by_class_name('text-error')
+        assert error_elem.is_displayed()
+
     def test_quit(self):
         """ closes driver """
         driver = self.driver
         driver.quit()
-
-
 
 
 
