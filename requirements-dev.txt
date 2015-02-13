@@ -1,4 +1,4 @@
-tox
+flake8
 pytest
+tox
 virtualenv
-
