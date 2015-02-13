@@ -48,6 +48,7 @@ class TestHome(SeleniumTestCase):
         submit_elem = driver.find_element_by_id("_submit")
          
         # enter correct username with invalid password
+        username_elem.clear()
         username_elem.send_keys(TEST_CREDENTIALS['username'])
         password_elem.send_keys("codebender")
         submit_elem.click()
@@ -56,10 +57,30 @@ class TestHome(SeleniumTestCase):
         error_elem = driver.find_element_by_class_name('text-error')
         assert error_elem.is_displayed()
 
+        """ tests that login takes you to user's home """
+        # refresh page so error message no longer visible
+        driver.refresh()
+
+        # re-click on login button
+        login_elem = driver.find_element_by_id("login_btn")
+        login_elem.send_keys(Keys.RETURN) 
+ 
+        # re-define elements in login form 
+        username_elem = driver.find_element_by_id("username")
+        password_elem = driver.find_element_by_id("password")
+        submit_elem = driver.find_element_by_id("_submit")
+
+        # log in to site using correct credentials
+        username_elem.clear()
+        username_elem.send_keys(TEST_CREDENTIALS['username'])
+        password_elem.send_keys(TEST_CREDENTIALS['password'])
+        submit_elem.click()
+        assert "Logged in as" in driver.page_source
+
     def test_quit(self):
         """ closes driver """
         driver = self.driver
-        driver.quit()
+        #driver.quit()
 
 
 
