@@ -6,8 +6,7 @@ BASE_URL = "http://localhost"
 
 # Selenium Webdrivers to be used for selenium tests
 WEBDRIVERS = {
-    "firefox": webdriver.Firefox,
-    "chrome": webdriver.Chrome
+    "firefox": webdriver.Firefox
 }
 
 # Credentials to use when logging into the site via selenium
