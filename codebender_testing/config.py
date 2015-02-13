@@ -16,6 +16,5 @@ TEST_CREDENTIALS = {
     "password": "testerPASS"
 }
 
-# How long to wait before we give up on the 'verify' command (in seconds)
-VERIFY_TIMEOUT = 10
+TEST_PROJECT_NAME = "test_project"
 

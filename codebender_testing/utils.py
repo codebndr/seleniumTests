@@ -8,6 +8,7 @@ import pytest
 
 from codebender_testing.config import BASE_URL
 from codebender_testing.config import TEST_CREDENTIALS
+from codebender_testing.config import TEST_PROJECT_NAME
 from codebender_testing.config import WEBDRIVERS
 
 
@@ -37,6 +38,16 @@ class SeleniumTestCase(object):
         else:
             url = url.lstrip('/')
             return self.driver.get("%s/%s" % (BASE_URL, url))
+
+    def open_project(self, project_name=None):
+        """Opens the project specified by `name`, bringing the driver to the
+        sketch view of that project. Opens the test project if `name` is
+        unspecified. The driver must be logged in to use this function."""
+        if project_name is None:
+            project_name = TEST_PROJECT_NAME
+
+        project_link = self.driver.find_element_by_link_text(project_name)
+        project_link.send_keys(Keys.ENTER)
 
 
 def logged_in(func):
