@@ -8,6 +8,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 import pytest
 
+from codebender_testing.config import TEST_PROJECT_NAME
 from codebender_testing.utils import SeleniumTestCase
 
 
@@ -52,7 +53,7 @@ class TestSketch(SeleniumTestCase):
         assert boards_dropdown.first_selected_option.text == TEST_BOARD
 
     def test_ports_dropdown(self):
-        """Ensures that the ports dropdown exists."""
+        """Tests that the ports dropdown exists."""
         self.get_element(By.ID, "ports")
 
     def test_run_with_no_port(self):
@@ -63,3 +64,15 @@ class TestSketch(SeleniumTestCase):
         WebDriverWait(self.driver, FLASH_TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
                 (By.ID, "operation_output"), "Please select a valid port or enable the plugin!!"))
+
+    def test_speeds_dropdown(self):
+        """Tests that the speeds dropdown exists."""
+        self.get_element(By.ID, "baudrates")
+
+    def test_clone_project(self):
+        """Tests that clicking the 'Clone Project' link brings us to a new
+        sketch with the title 'test_project clone'."""
+        clone_link = self.get_element(By.LINK_TEXT, 'Clone Project')
+        clone_link.click()
+        project_name = self.get_element(By.ID, 'editor_heading_project_name')
+        assert project_name.text.startswith("%s copy" % TEST_PROJECT_NAME)
