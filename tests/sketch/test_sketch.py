@@ -58,8 +58,8 @@ class TestSketch(SeleniumTestCase):
     def test_run_with_no_port(self):
         """Makes sure that there is an error when we attempt to run with no
         port selected."""
-        flash_button = self.get_element(By.ID, "usbflash")
+        flash_button = self.get_element(By.ID, "uploadusb")
         flash_button.click()
         WebDriverWait(self.driver, FLASH_TIMEOUT).until(
-            expected_condiditons.text_to_be_present_in_element(
+            expected_conditions.text_to_be_present_in_element(
                 (By.ID, "operation_output"), "Please select a valid port or enable the plugin!!"))
