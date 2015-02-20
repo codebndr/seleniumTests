@@ -1,12 +1,30 @@
+import os
+
 from selenium import webdriver
 
 
 # URL of the site to be used for testing
 BASE_URL = "http://localhost"
 
-# Selenium Webdrivers to be used for selenium tests
+
+_EXTENSIONS_DIR = 'extensions'
+_FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
+
+# Set up Selenium Webdrivers to be used for selenium tests
+
+def _get_firefox_profile():
+    """Returns the Firefox profile to be used for the FF webdriver.
+    Specifically, we're equipping the webdriver with the Codebender
+    extension.
+    """
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.add_extension(
+        extension=os.path.join(_EXTENSIONS_DIR, _FIREFOX_EXTENSION_FNAME)
+    )
+    return firefox_profile
+
 WEBDRIVERS = {
-    "firefox": webdriver.Firefox
+    "firefox": webdriver.Firefox(firefox_profile=_get_firefox_profile())
 }
 
 # Credentials to use when logging into the site via selenium
