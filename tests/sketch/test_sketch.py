@@ -76,3 +76,13 @@ class TestSketch(SeleniumTestCase):
         clone_link.click()
         project_name = self.get_element(By.ID, 'editor_heading_project_name')
         assert project_name.text.startswith("%s copy" % TEST_PROJECT_NAME)
+
+    def test_add_projectfile(self):
+        """ Tests that new file can be added to project using create-new-file field """
+        add_button = self.get_element(By.CLASS_NAME, 'icon-plus')
+        add_button.click()
+        create_field = self.get_element(By.ID, 'createfield')
+        create_field.send_keys('test_file.txt')
+        create_button = self.get_element(By.CLASS_NAME, 'btn')
+        create_button.click()
+        assert "test_file.txt" in self.driver.page_source
