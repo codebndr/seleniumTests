@@ -77,7 +77,7 @@ class TestSketch(SeleniumTestCase):
         project_name = self.get_element(By.ID, 'editor_heading_project_name')
         assert project_name.text.startswith("%s copy" % TEST_PROJECT_NAME)
 
-    def test_add_projectfile(self):
+    def test_add_projectfile_direct(self):
         """ Tests that new file can be added to project using create-new-file field """
         add_button = self.get_element(By.CLASS_NAME, 'icon-plus')
         add_button.click()
@@ -85,4 +85,23 @@ class TestSketch(SeleniumTestCase):
         create_field.send_keys('test_file.txt')
         create_button = self.get_element(By.CLASS_NAME, 'btn')
         create_button.click()
-        assert "test_file.txt" in self.driver.page_source
+        assert 'test_file.txt' in self.driver.page_source
+    '''
+    def test_add_projectfile_upload(self):
+        """ Tests that new file can be added to project using upload dialog """
+        add_button = self.get_element(By.CLASS_NAME, 'icon-plus')
+        add_button.click()
+        drop_zone = self.get_element(By.CLASS_NAME, 'dz-clickable')
+        drop_zone.click()
+        self.driver.get("http://localhost/js/dropzone/min.js")
+        self.driver.execute_script("self.get_element(By.NAME,'uploadType').value = '/test.h'")
+
+        #file_input_element = self.get_element(By.NAME, 'uploadType')'''
+
+    def test_delete_file(self):
+        """Tests file delete modal """
+        delete_file_button = self.get_element(By.CLASS_NAME, 'icon-remove')
+        delete_file_button.click()
+        delete_modal = self.get_element(By.ID, 'filedeleteModal')
+        assert delete_modal.is_displayed()
+
