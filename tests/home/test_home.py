@@ -63,7 +63,7 @@ class TestHome(SeleniumTestCase):
 
         # re-click on login button
         login_elem = driver.find_element_by_id("login_btn")
-        login_elem.send_keys(Keys.RETURN) 
+        login_elem.send_keys(Keys.RETURN)
  
         # re-define elements in login form 
         username_elem = driver.find_element_by_id("username")
@@ -72,15 +72,11 @@ class TestHome(SeleniumTestCase):
 
         # log in to site using correct credentials
         username_elem.clear()
+        password_elem.clear()
         username_elem.send_keys(TEST_CREDENTIALS['username'])
         password_elem.send_keys(TEST_CREDENTIALS['password'])
         submit_elem.click()
         assert "Logged in as" in driver.page_source
-
-    def test_quit(self):
-        """ closes driver """
-        driver = self.driver
-        #driver.quit()
 
 
 

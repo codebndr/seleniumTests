@@ -85,6 +85,7 @@ class TestSketch(SeleniumTestCase):
         create_field.send_keys('test_file.txt')
         create_button = self.get_element(By.CLASS_NAME, 'btn')
         create_button.click()
+        self.driver.refresh()
         assert 'test_file.txt' in self.driver.page_source
     '''
     def test_add_projectfile_upload(self):
@@ -105,3 +106,9 @@ class TestSketch(SeleniumTestCase):
         delete_modal = self.get_element(By.ID, 'filedeleteModal')
         assert delete_modal.is_displayed()
 
+    def test_verify_deletion(self):
+        """ Verifies that file has been deleted """
+        confirm_delete_button = self.get_element(By.ID, 'filedeleteButton')
+        confirm_delete_button.click()
+        self.driver.refresh()
+        assert 'test_file.txt' not in self.driver.page_source
