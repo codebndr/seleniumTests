@@ -37,6 +37,10 @@ class TestSketch(SeleniumTestCase):
         compile_button = self.driver.find_element_by_id("compile")
         compile_button.click()
 
+        # test progress bar is visible
+        progress_bar = self.get_element(By.ID, 'progress')
+        assert progress_bar.is_displayed()
+
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
                 (By.ID, "operation_output"), "Verification Successful!")
@@ -112,3 +116,5 @@ class TestSketch(SeleniumTestCase):
         confirm_delete_button.click()
         self.driver.refresh()
         assert 'test_file.txt' not in self.driver.page_source
+
+     
