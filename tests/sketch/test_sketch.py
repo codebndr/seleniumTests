@@ -31,7 +31,7 @@ class TestSketch(SeleniumTestCase):
         # I get a StaleElementReferenceException without
         # this wait. TODO: figure out how to get around this.
         time.sleep(3)
- 
+
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
         compile_button = self.driver.find_element_by_id("compile")
@@ -69,10 +69,29 @@ class TestSketch(SeleniumTestCase):
         """Tests that the speeds dropdown exists."""
         self.get_element(By.ID, "baudrates")
 
+    def test_serial_monitor_disables_fields(self):
+        """Tests that opening the serial monitor disables the port and baudrate
+        fields."""
+        open_serial_monitor_button = self.get_element(By.ID, 'toggle_connect_serial')
+        open_serial_monitor_button.click()
+
+        baudrate_field = self.get_element(By.ID, 'baudrates_placeholder')
+        assert baudrate_field.get_attribute('disabled') == 'true'
+
+        ports_field = self.get_element(By.ID, 'ports_placeholder')
+        assert ports_field.get_attribute('disabled') == 'true'
+
+
     def test_clone_project(self):
         """Tests that clicking the 'Clone Project' link brings us to a new
         sketch with the title 'test_project clone'."""
         clone_link = self.get_element(By.LINK_TEXT, 'Clone Project')
         clone_link.click()
         project_name = self.get_element(By.ID, 'editor_heading_project_name')
+        # Here, I use `startswith` in case the user has a bunch of
+        # projects like "test_project copy copy copy" ...
         assert project_name.text.startswith("%s copy" % TEST_PROJECT_NAME)
+
+        # Cleanup: delete the project we just created.
+        self.delete_project("%s copy" % TEST_PROJECT_NAME)
+
