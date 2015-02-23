@@ -2,6 +2,7 @@ import re
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
@@ -28,7 +29,7 @@ class SeleniumTestCase(object):
         cls.driver = webdriver
 
     @pytest.fixture(scope="class")
-    def tester_login(self): 
+    def tester_login(self):
         self.login()
 
     def open(self, url=None):
@@ -77,6 +78,16 @@ class SeleniumTestCase(object):
         """Waits for an element specified by *locator (a tuple of
         (By.<something>, str)), then returns it if it is found."""
         WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
-            expected_conditions.presence_of_element_located(locator))
+            expected_conditions.visibility_of_element_located(locator))
         return self.driver.find_element(*locator)
-        
+
+    def delete_project(self, project_name):
+        """Deletes the project specified by `project_name`. Note that this will
+        navigate to the user's homepage."""
+        self.open('/')
+        created_project = self.get_element(By.LINK_TEXT, project_name)
+        delete_button_li = created_project.find_element_by_xpath('..')
+        delete_button = delete_button_li.find_element_by_css_selector('button:last-child')
+        delete_button.click()
+        popup_delete_button = self.get_element(By.ID, 'deleteProjectButton')
+        popup_delete_button.click()

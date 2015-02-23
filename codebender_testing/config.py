@@ -6,9 +6,15 @@ from selenium import webdriver
 # URL of the site to be used for testing
 BASE_URL = "http://localhost"
 
+# URL of the actual Codebender website
+LIVE_SITE_URL = "http://codebender.cc"
 
 _EXTENSIONS_DIR = 'extensions'
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
+
+# Files used for testing
+TEST_DATA_DIR = 'test_data'
+TEST_DATA_BLANK_PROJECT = os.path.join(TEST_DATA_DIR, 'blank_project.ino')
 
 # Set up Selenium Webdrivers to be used for selenium tests
 
