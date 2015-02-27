@@ -6,6 +6,15 @@ from selenium import webdriver
 # URL of the site to be used for testing
 BASE_URL = "http://localhost"
 
+# User whose projects we'd like to compile in our compile_tester
+# test case(s).
+COMPILE_TESTER_URL = "/user/cb_compile_tester"
+
+# Path to the logfile for the COMPILE_TESTER.
+# Note that it is given as a time format string, which will
+# be formatted appropriately.
+COMPILE_TESTER_LOGFILE = "logs/%Y-%m-%d_%H-%M-%S-cb_compile_tester.json"
+
 # URL of the actual Codebender website
 LIVE_SITE_URL = "http://codebender.cc"
 
