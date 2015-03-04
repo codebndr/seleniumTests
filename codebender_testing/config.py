@@ -10,10 +10,16 @@ BASE_URL = "http://localhost"
 # test case(s).
 COMPILE_TESTER_URL = "/user/cb_compile_tester"
 
-# Path to the logfile for the COMPILE_TESTER.
+# The prefix for all filenames of log files.
 # Note that it is given as a time format string, which will
 # be formatted appropriately.
-COMPILE_TESTER_LOGFILE = "logs/%Y-%m-%d_%H-%M-%S-cb_compile_tester.json"
+LOGFILE_PREFIX = os.path.join("logs", "%Y-%m-%d_%H-%M-%S-{log_name}.json")
+
+# Logfile for COMPILE_TESTER compilation results
+COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
+
+# Logfile for /libraries compilation results
+LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
 
 # URL of the actual Codebender website
 LIVE_SITE_URL = "http://codebender.cc"

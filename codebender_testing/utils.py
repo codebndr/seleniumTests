@@ -29,7 +29,14 @@ _GET_SKETCHES_SCRIPT = \
     "return $('{selector}').map(function() {{ return this.href; }}).toArray();"
 
 # JavaScript snippet to verify the code on the current page.
-_VERIFY_SCRIPT = "compilerflasher.verify()"
+_VERIFY_SCRIPT = """
+if (window.compilerflasher !== undefined) {
+    compilerflasher.verify();
+} else {
+    // BACHELOR
+    verify();
+}
+"""
 
 # How long (in seconds) to wait before assuming that an example
 # has failed to compile
@@ -136,19 +143,22 @@ class SeleniumTestCase(object):
             # giving this iframe a meaningful name in the HTML (TODO?)
             self.driver.switch_to_frame(0)
         self.execute_script(_VERIFY_SCRIPT)
+        # In the BACHELOR site the id is 'operation_output', but in the live
+        # site the id is 'cb_cf_operation_output'. The [id$=operation_output]
+        # here selects an id that _ends_ with 'operation_output'.
         compile_result = WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
-            any_text_to_be_present_in_element((By.ID, "cb_cf_operation_output"),
+            any_text_to_be_present_in_element((By.CSS_SELECTOR, "[id$=operation_output]"),
                 VERIFICATION_SUCCESSFUL_MESSAGE, VERIFICATION_FAILED_MESSAGE))
         if compile_result != VERIFICATION_SUCCESSFUL_MESSAGE:
             raise VerificationError(compile_result)
 
 
-    def compile_all_sketches(self, url, selector, iframe=False, log_file=None):
+    def compile_all_sketches(self, url, selector, iframe=False, logfile=None):
         """Compiles all projects on the page at `url`. `selector` is a CSS selector
         that should select all relevant <a> tags containing links to sketches.
-        `log_file` specifies a path to a file to which test results will be
+        `logfile` specifies a path to a file to which test results will be
         logged. If it is not `None`, compile errors will not cause the test
-        to halt, but rather be logged to the given file. `log_file` may be a time
+        to halt, but rather be logged to the given file. `logfile` may be a time
         format string, which will be formatted appropriately.
         `iframe` specifies whether the urls pointed to by `selector` are contained
         within an iframe.
@@ -157,11 +167,11 @@ class SeleniumTestCase(object):
         sketches = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector=selector))
         assert len(sketches) > 0
 
-        if log_file is None:
+        if logfile is None:
             for sketch in sketches:
                 self.compile_sketch(sketch, iframe=iframe)
         else:
-            log_entry = {'succeeded': [], 'failed': []}
+            log_entry = {'url': self.site_url, 'succeeded': [], 'failed': []}
             for sketch in sketches:
                 try:
                     self.compile_sketch(sketch, iframe=iframe)
@@ -172,8 +182,8 @@ class SeleniumTestCase(object):
                         'exception': "%s; %s" % (type(e).__name__, str(e))
                         # TODO?: is it possible to get the actual compiler error?
                     })
-            # Dump the test results to `log_file`.
-            f = open(strftime(log_file, gmtime()), 'w')
+            # Dump the test results to `logfile`.
+            f = open(strftime(logfile, gmtime()), 'w')
             json.dump(log_entry, f)
             f.close()
 
