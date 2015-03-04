@@ -39,22 +39,25 @@ VERIFY_TIMEOUT = 15
 VERIFICATION_SUCCESSFUL_MESSAGE = "Verification Successful"
 VERIFICATION_FAILED_MESSAGE = "Verification failed."
 
+
 class SeleniumTestCase(object):
     """Base class for all Selenium tests."""
 
     # This can be configured on a per-test case basis to use a different
-    # URL for testing; e.g., http://localhost, or http://codebender.cc
-    site_url = BASE_URL
+    # URL for testing; e.g., http://localhost, or http://codebender.cc.
+    # It is set via command line option in _testcase_attrs (below)
+    site_url = None
 
     @classmethod
     @pytest.fixture(scope="class", autouse=True)
-    def _testcase_attrs(cls, webdriver):
+    def _testcase_attrs(cls, webdriver, testing_url):
         """Sets up any class attributes to be used by any SeleniumTestCase.
         Here, we just store fixtures as class attributes. This allows us to avoid
         the pytest boilerplate of getting a fixture value, and instead just
         refer to the fixture as `self.<fixture>`.
         """
         cls.driver = webdriver
+        cls.site_url = testing_url
 
     @pytest.fixture(scope="class")
     def tester_login(self):
