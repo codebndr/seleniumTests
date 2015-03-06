@@ -133,8 +133,6 @@ class SeleniumTestCase(object):
     def compile_sketch(self, url, iframe=False):
         """Compiles the sketch located at `url`, or an iframe within the page
         referred to by `url`.  Raises an exception if it does not compile.
-        Note: this was written for the live site, and probably does not work
-        with the bachelor version due to CSS / JS changes.
         """
         self.open(url)
         if iframe:
