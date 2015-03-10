@@ -1,8 +1,12 @@
+import os
+
 from selenium.webdriver.common.by import By
 import pytest
 
 from codebender_testing.config import TEST_DATA_BLANK_PROJECT
+from codebender_testing.config import TEST_DATA_BLANK_PROJECT_ZIP
 from codebender_testing.utils import SeleniumTestCase
+from codebender_testing.utils import temp_copy
 
 
 # Name to be used for the new project that is created.
@@ -51,4 +55,43 @@ class TestUserHome(SeleniumTestCase):
 
         # Cleanup: delete the project we just created.
         self.delete_project(NEW_PROJECT_NAME)
+
+    def _upload_test(self, test_fname, project_name=None):
+        """Tests that we can successfully upload `test_fname`.
+        `project_name` is the expected name of the project; by
+        default it is inferred from the file name.
+        """
+
+        # A tempfile is used here since we want the name to be
+        # unique; if the file has already been successfully uploaded
+        # then the test might give a false-positive.
+        with temp_copy(test_fname) as test_file:
+            self.dropzone_upload("#dropzoneForm", test_file.name)
+            if project_name is None:
+                project_name = os.path.split(test_file.name)[-1].split('.')[0]
+
+            # The upload was successful <==> we get a green "check" on its
+            # Dropzone upload indicator
+            self.get_element(By.CSS_SELECTOR, '#dropzoneForm .dz-success')
+
+        # Make sure the project shows up in the Projects list
+        last_project = self.get_element(By.CSS_SELECTOR,
+            '#sidebar-list-main li:last-child .project_link')
+
+        assert last_project.text == project_name
+
+        # Cleanup. If the above assertion failed, then we leave
+        # garbage behind. This is unavoidable for now since we don't
+        # have proper test fixtures. (TODO?)
+        self.delete_project(project_name)
+
+    def test_upload_project_ino(self):
+        """Tests that we can upload a .ino file."""
+        self._upload_test(TEST_DATA_BLANK_PROJECT)
+
+    def test_upload_project_zip(self):
+        """Tests that we can successfully upload a zipped project."""
+        # TODO: how is the project name inferred from the zip file?
+        # Hardcoding the contents of the zip file feels weird here.
+        self._upload_test(TEST_DATA_BLANK_PROJECT_ZIP, "blank_project")
 

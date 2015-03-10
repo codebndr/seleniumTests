@@ -1,9 +1,10 @@
+from contextlib import contextmanager
 from time import gmtime
 from time import strftime
 import json
 import re
+import tempfile
 
-from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import WebDriverException
@@ -13,11 +14,9 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 import pytest
 
-from codebender_testing.config import BASE_URL
 from codebender_testing.config import ELEMENT_FIND_TIMEOUT
 from codebender_testing.config import TEST_CREDENTIALS
 from codebender_testing.config import TEST_PROJECT_NAME
-from codebender_testing.config import WEBDRIVERS
 
 
 # Time to wait until we give up on a DOM property becoming available.
@@ -38,6 +37,24 @@ if (window.compilerflasher !== undefined) {
 }
 """
 
+_TEST_INPUT_ID = "_cb_test_input"
+
+# Creates an input into which we can upload files using Selenium.
+_CREATE_INPUT_SCRIPT = """
+var input = window.$('<input id="{input_id}" type="file" style="position: fixed">');
+window.$('body').append(input);
+""".format(input_id=_TEST_INPUT_ID)
+
+# After the file is chosen via Selenium, this script moves the file object
+# (in the DOM) to the Dropzone.
+def _move_file_to_dropzone_script(dropzone_selector):
+    return """
+var fileInput = document.getElementById('{input_id}');
+var file = fileInput.files[0];
+var dropzone = Dropzone.forElement('{selector}');
+dropzone.drop({{ dataTransfer: {{ files: [file] }} }});
+""".format(input_id=_TEST_INPUT_ID, selector=dropzone_selector)
+
 # How long (in seconds) to wait before assuming that an example
 # has failed to compile
 VERIFY_TIMEOUT = 15
@@ -45,6 +62,23 @@ VERIFY_TIMEOUT = 15
 # Messages displayed to the user after verifying a sketch.
 VERIFICATION_SUCCESSFUL_MESSAGE = "Verification Successful"
 VERIFICATION_FAILED_MESSAGE = "Verification failed."
+
+
+@contextmanager
+def temp_copy(fname):
+    """Creates a temporary copy of the file `fname`.
+    This is useful for testing features that derive certain properties
+    from the filename, and we want a unique filename each time we run the
+    test (in case, for example, there is leftover garbage from previous
+    tests with the same name).
+    """
+    extension = fname.split('.')[-1]
+    with tempfile.NamedTemporaryFile(mode='w+b', suffix='.%s' % extension) as copy:
+        with open(fname, 'r') as original:
+            for line in original:
+                copy.write(line)
+        copy.flush()
+        yield copy
 
 
 class SeleniumTestCase(object):
@@ -152,6 +186,18 @@ class SeleniumTestCase(object):
         if compile_result != VERIFICATION_SUCCESSFUL_MESSAGE:
             raise VerificationError(compile_result)
 
+
+    def dropzone_upload(self, selector, fname):
+        """Uploads a file specified by `fname` via the Dropzone within the
+        element specified by `selector`. (Dropzone refers to Dropzone.js)
+        """
+        # Create an artificial file input.
+        self.execute_script(_CREATE_INPUT_SCRIPT)
+        test_input = self.get_element(By.ID, _TEST_INPUT_ID)
+        test_input.send_keys(fname)
+        self.execute_script(_move_file_to_dropzone_script(selector))
+        import time
+        time.sleep(10)
 
     def compile_all_sketches(self, url, selector, iframe=False, logfile=None):
         """Compiles all projects on the page at `url`. `selector` is a CSS selector

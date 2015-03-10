@@ -3,7 +3,11 @@ import os
 from selenium import webdriver
 
 
-# URL of the site to be used for testing
+def _rel_path(*args):
+    """Forms a path relative to this file's directory."""
+    return os.path.join(os.path.dirname(__file__), *args)
+
+# URL of the default site to be used for testing
 BASE_URL = "http://localhost"
 
 # User whose projects we'd like to compile in our compile_tester
@@ -13,7 +17,7 @@ COMPILE_TESTER_URL = "/user/cb_compile_tester"
 # The prefix for all filenames of log files.
 # Note that it is given as a time format string, which will
 # be formatted appropriately.
-LOGFILE_PREFIX = os.path.join("logs", "%Y-%m-%d_%H-%M-%S-{log_name}.json")
+LOGFILE_PREFIX = _rel_path("..", "logs", "%Y-%m-%d_%H-%M-%S-{log_name}.json")
 
 # Logfile for COMPILE_TESTER compilation results
 COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
@@ -24,12 +28,13 @@ LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
 # URL of the actual Codebender website
 LIVE_SITE_URL = "http://codebender.cc"
 
-_EXTENSIONS_DIR = 'extensions'
+_EXTENSIONS_DIR = _rel_path('..', 'extensions')
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
 
 # Files used for testing
-TEST_DATA_DIR = 'test_data'
+TEST_DATA_DIR = _rel_path('..', 'test_data')
 TEST_DATA_BLANK_PROJECT = os.path.join(TEST_DATA_DIR, 'blank_project.ino')
+TEST_DATA_BLANK_PROJECT_ZIP = os.path.join(TEST_DATA_DIR, 'blank_project.zip')
 
 # Set up Selenium Webdrivers to be used for selenium tests
 
