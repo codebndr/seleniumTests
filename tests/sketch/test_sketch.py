@@ -91,17 +91,17 @@ class TestSketch(SeleniumTestCase):
         create_button.click()
         self.driver.refresh()
         assert 'test_file.txt' in self.driver.page_source
-    '''
+
     def test_add_projectfile_upload(self):
         """ Tests that new file can be added to project using upload dialog """
         add_button = self.get_element(By.CLASS_NAME, 'icon-plus')
         add_button.click()
-        drop_zone = self.get_element(By.CLASS_NAME, 'dz-clickable')
+        '''drop_zone = self.get_element(By.ID, 'dropzoneForm')
         drop_zone.click()
-        self.driver.get("http://localhost/js/dropzone/min.js")
-        self.driver.execute_script("self.get_element(By.NAME,'uploadType').value = '/test.h'")
-
-        #file_input_element = self.get_element(By.NAME, 'uploadType')'''
+        self.driver.send_keys(Keys.ARROW_DOWN)
+        off_form_area = self.get_element(By.CLASS_NAME, 'modal-backdrop')
+        off_form_area.click()'''
+        #file_input_element.send_keys('test.h')
 
     def test_delete_file(self):
         """Tests file delete modal """
