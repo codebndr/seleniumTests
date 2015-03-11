@@ -196,8 +196,6 @@ class SeleniumTestCase(object):
         test_input = self.get_element(By.ID, _TEST_INPUT_ID)
         test_input.send_keys(fname)
         self.execute_script(_move_file_to_dropzone_script(selector))
-        import time
-        time.sleep(10)
 
     def compile_all_sketches(self, url, selector, iframe=False, logfile=None):
         """Compiles all projects on the page at `url`. `selector` is a CSS selector
