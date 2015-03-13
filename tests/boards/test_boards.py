@@ -17,10 +17,20 @@ class TestBoards(SeleniumTestCase):
         driver = self.driver 
         driver.execute_script("document.getElementById('filestyle-0').style.left=0;")
         input_element = self.get_element(By.ID, 'filestyle-0')
-        input_element.send_keys("/home/codebender/129.txt")
+        input_element.send_keys("/home/codebender/success.txt")
         submit_button = self.get_element(By.CLASS_NAME, 'btn-success')
         submit_button.click()
         assert "successfully added" in driver.page_source
+
+    def test_upload_with_error(self):
+        """ tests upload of file with error """
+        driver = self.driver 
+        driver.execute_script("document.getElementById('filestyle-0').style.left=0;")
+        input_element = self.get_element(By.ID, 'filestyle-0')
+        input_element.send_keys("/home/codebender/error.h")
+        submit_button = self.get_element(By.CLASS_NAME, 'btn-success')
+        submit_button.click()
+        assert "Error" in driver.page_source
 
     def test_logout(self):
         """ logs out user to prepare for following tests """
