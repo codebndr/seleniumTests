@@ -94,14 +94,27 @@ class TestSketch(SeleniumTestCase):
 
     def test_add_projectfile_upload(self):
         """ Tests that new file can be added to project using upload dialog """
+        driver = self.driver
         add_button = self.get_element(By.CLASS_NAME, 'icon-plus')
         add_button.click()
-        '''drop_zone = self.get_element(By.ID, 'dropzoneForm')
-        drop_zone.click()
-        self.driver.send_keys(Keys.ARROW_DOWN)
-        off_form_area = self.get_element(By.CLASS_NAME, 'modal-backdrop')
-        off_form_area.click()'''
-        #file_input_element.send_keys('test.h')
+        driver.execute_script(
+        '''
+        var node = document.createElement('input');
+        node.setAttribute('id', 'inputElement')
+        node.style.visibility = 'visible';
+        node.style.type = 'file'
+        document.getElementById('dropzoneForm').appendChild(node)
+        '''
+        )
+        input_element = self.get_element(By.ID, 'inputElement')
+        input_element.send_keys('/home/codedender/success.c')
+        assert "success.c" in driver.page_source
+
+    def test_add_projecfile_unsupported(self):
+        """ Tests that new unsupported file does not add to project using upload dialog """
+        input_element = self.get_element(By.ID, 'inputElement')
+        input_element.send_keys('/home/codedender/success.txt')
+        assert "success.txt" not in self.driver.page_source
 
     def test_delete_file(self):
         """Tests file delete modal """
