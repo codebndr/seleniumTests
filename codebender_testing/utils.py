@@ -14,8 +14,38 @@ from codebender_testing.config import TEST_PROJECT_NAME
 from codebender_testing.config import WEBDRIVERS
 
 
+_TEST_INPUT_ID = "_cb_test_input"
+
+# Creates an input into which we can upload files using Selenium.
+_CREATE_INPUT_SCRIPT = """
+var input = window.$('<input id="{input_id}" type="file" style="position: fixed">');
+window.$('body').append(input);
+""".format(input_id=_TEST_INPUT_ID)
+
+# After the file is chosen via Selenium, this script moves the file object
+# (in the DOM) to the Dropzone.
+def _move_file_to_dropzone_script(dropzone_selector):
+    return """
+var fileInput = document.getElementById('{input_id}');
+var file = fileInput.files[0];
+var dropzone = Dropzone.forElement('{selector}');
+dropzone.drop({{ dataTransfer: {{ files: [file] }} }});
+""".format(input_id=_TEST_INPUT_ID, selector=dropzone_selector)
+
 class SeleniumTestCase(object):
     """Base class for all Selenium tests."""
+
+    def dropzone_upload(self, selector, fname):
+        """Uploads a file specified by `fname` via the Dropzone within the
+        element specified by `selector`. (Dropzone refers to Dropzone.js)
+        """
+        # Create an artificial file input.
+        self.execute_script(_CREATE_INPUT_SCRIPT)
+        test_input = self.get_element(By.ID, _TEST_INPUT_ID)
+        test_input.send_keys(fname)
+        self.execute_script(_move_file_to_dropzone_script(selector))
+        import time
+        time.sleep(10)
 
     @classmethod
     @pytest.fixture(scope="class", autouse=True)
