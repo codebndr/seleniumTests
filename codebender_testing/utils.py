@@ -14,9 +14,11 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 import pytest
 
+from codebender_testing.config import BASE_URL
 from codebender_testing.config import ELEMENT_FIND_TIMEOUT
 from codebender_testing.config import TEST_CREDENTIALS
 from codebender_testing.config import TEST_PROJECT_NAME
+from codebender_testing.config import WEBDRIVERS
 
 
 # Time to wait until we give up on a DOM property becoming available.
@@ -81,28 +83,58 @@ def temp_copy(fname):
         yield copy
 
 
-class SeleniumTestCase(object):
-    """Base class for all Selenium tests."""
+class CodebenderSeleniumBot(object):
+    """Contains various utilities for navigating the Codebender website."""
 
     # This can be configured on a per-test case basis to use a different
     # URL for testing; e.g., http://localhost, or http://codebender.cc.
     # It is set via command line option in _testcase_attrs (below)
     site_url = None
 
-    @classmethod
-    @pytest.fixture(scope="class", autouse=True)
-    def _testcase_attrs(cls, webdriver, testing_url):
-        """Sets up any class attributes to be used by any SeleniumTestCase.
-        Here, we just store fixtures as class attributes. This allows us to avoid
-        the pytest boilerplate of getting a fixture value, and instead just
-        refer to the fixture as `self.<fixture>`.
+    def start(url=None, webdriver=None):
+        """Create the selenium webdriver, operating on `url`. We can't do this
+        in an __init__ method, otherwise py.test complains about
+        SeleniumTestCase having an init method.
+        The webdriver that is created is specified as a key into the WEBDRIVERS
+        dict (in codebender_testing.config)
         """
-        cls.driver = webdriver
-        cls.site_url = testing_url
+        if webdriver is None:
+            webdriver = WEBDRIVERS.keys()[0]
+        self.driver = WEBDRIVERS[webdriver]
 
-    @pytest.fixture(scope="class")
-    def tester_login(self):
-        self.login()
+        if url is None:
+            url = BASE_URL
+        self.site_url = url
+
+    @classmethod
+    @contextmanager
+    def session(cls, **kwargs):
+        """Start a new session with a new webdriver. Regardless of whether an
+        exception is raised, the webdriver is guaranteed to quit.
+        The keyword arguments should be interpreted as in `start`.
+
+        Sample usage:
+
+        ```
+        with CodebenderSeleniumBot.session(url="localhost",
+                                           webdriver="firefox") as bot:
+            # The browser is now open
+            bot.open("/")
+            assert "Codebender" in bot.driver.title
+        # The browser is now closed
+        ```
+
+        Test cases shouldn't need to use this method; it's mostly useful for
+        scripts, automation, etc.
+        """
+        try:
+            bot = cls()
+            bot.start(**kwargs)
+            yield bot
+            bot.driver.quit()
+        except:
+            bot.driver.quit()
+            raise
 
     def open(self, url=None):
         """Open the resource specified by `url`.
@@ -152,6 +184,21 @@ class SeleniumTestCase(object):
         WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
             expected_conditions.visibility_of_element_located(locator))
         return self.driver.find_element(*locator)
+
+    def get_elements(self, *locator):
+        """Like `get_element`, but returns a list of all elements matching
+        the selector."""
+        WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
+            expected_conditions.visibility_of_all_elements_located_by(locator))
+        return self.driver.find_elements(*locator)
+
+    def get(self, selector):
+        """Alias for `self.get_element(By.CSS_SELECTOR, selector)`."""
+        return self.get_element(By.CSS_SELECTOR, selector)
+
+    def get_all(self, selector):
+        """Alias for `self.get_elements(By.CSS_SELECTOR, selector)`."""
+        return self.get_elements(By.CSS_SELECTOR, selector)
 
     def delete_project(self, project_name):
         """Deletes the project specified by `project_name`. Note that this will
@@ -234,12 +281,30 @@ class SeleniumTestCase(object):
 
     def execute_script(self, script, *deps):
         """Waits for all JavaScript variables in `deps` to be defined, then
-        executes the given script. Especially useful for waiting for things like
-        jQuery to become available for use."""
+        executes the given script."""
         if len(deps) > 0:
             WebDriverWait(self.driver, DOM_PROPERTY_DEFINED_TIMEOUT).until(
                 dom_properties_defined(*deps))
         return self.driver.execute_script(script)
+
+
+class SeleniumTestCase(CodebenderSeleniumBot):
+    """Base class for all Selenium tests."""
+
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
+    def _testcase_attrs(cls, webdriver, testing_url):
+        """Sets up any class attributes to be used by any SeleniumTestCase.
+        Here, we just store fixtures as class attributes. This allows us to avoid
+        the pytest boilerplate of getting a fixture value, and instead just
+        refer to the fixture as `self.<fixture>`.
+        """
+        cls.driver = webdriver
+        cls.site_url = testing_url
+
+    @pytest.fixture(scope="class")
+    def tester_login(self):
+        self.login()
 
 
 class VerificationError(Exception):

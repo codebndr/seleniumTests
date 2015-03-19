@@ -9,6 +9,9 @@ def _rel_path(*args):
 
 # URL of the default site to be used for testing
 BASE_URL = "http://localhost"
+# URL of the actual Codebender website
+LIVE_SITE_URL = "http://codebender.cc"
+
 
 # User whose projects we'd like to compile in our compile_tester
 # test case(s).
@@ -24,9 +27,6 @@ COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
 
 # Logfile for /libraries compilation results
 LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
-
-# URL of the actual Codebender website
-LIVE_SITE_URL = "http://codebender.cc"
 
 _EXTENSIONS_DIR = _rel_path('..', 'extensions')
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
