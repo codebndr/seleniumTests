@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from time import gmtime
 from time import strftime
 import json
+import os
 import re
 import tempfile
 
@@ -161,6 +162,30 @@ class CodebenderSeleniumBot(object):
         project_link = self.driver.find_element_by_link_text(project_name)
         project_link.send_keys(Keys.ENTER)
 
+    def upload_project(self, test_fname, project_name=None):
+        """Tests that we can successfully upload `test_fname`.
+        `project_name` is the expected name of the project; by
+        default it is inferred from the file name.
+        Returns a pair of (the name of the project, the url of the project sketch)
+        """
+        # A tempfile is used here since we want the name to be
+        # unique; if the file has already been successfully uploaded
+        # then the test might give a false-positive.
+        with temp_copy(test_fname) as test_file:
+            self.dropzone_upload("#dropzoneForm", test_file.name)
+            if project_name is None:
+                project_name = os.path.split(test_file.name)[-1].split('.')[0]
+
+            # The upload was successful <==> we get a green "check" on its
+            # Dropzone upload indicator
+            self.get_element(By.CSS_SELECTOR, '#dropzoneForm .dz-success')
+
+        # Make sure the project shows up in the Projects list
+        last_project = self.get_element(By.CSS_SELECTOR,
+            '#sidebar-list-main li:last-child .project_link')
+
+        return last_project.text, last_project.get_attribute('href')
+
     def login(self):
         """Performs a login."""
         try:
@@ -244,9 +269,18 @@ class CodebenderSeleniumBot(object):
         test_input.send_keys(fname)
         self.execute_script(_move_file_to_dropzone_script(selector))
 
-    def compile_all_sketches(self, url, selector, iframe=False, logfile=None):
-        """Compiles all projects on the page at `url`. `selector` is a CSS selector
+    def compile_all_sketches(self, url, selector, **kwargs):
+        """Compiles all sketches on the page at `url`. `selector` is a CSS selector
         that should select all relevant <a> tags containing links to sketches.
+        See `compile_sketches` for the possible keyword arguments that can be specified.
+        """
+        self.open(url)
+        sketches = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector=selector))
+        assert len(sketches) > 0
+        self.compile_sketches(sketches, **kwargs)
+
+    def compile_sketches(self, sketches, iframe=False, logfile=None):
+        """Compiles the sketches with URLs given by the `sketches` list.
         `logfile` specifies a path to a file to which test results will be
         logged. If it is not `None`, compile errors will not cause the test
         to halt, but rather be logged to the given file. `logfile` may be a time
@@ -254,10 +288,6 @@ class CodebenderSeleniumBot(object):
         `iframe` specifies whether the urls pointed to by `selector` are contained
         within an iframe.
         """
-        self.open(url)
-        sketches = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector=selector))
-        assert len(sketches) > 0
-
         if logfile is None:
             for sketch in sketches:
                 self.compile_sketch(sketch, iframe=iframe)
@@ -277,7 +307,6 @@ class CodebenderSeleniumBot(object):
             f = open(strftime(logfile, gmtime()), 'w')
             json.dump(log_entry, f)
             f.close()
-
 
     def execute_script(self, script, *deps):
         """Waits for all JavaScript variables in `deps` to be defined, then

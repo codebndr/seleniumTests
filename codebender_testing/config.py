@@ -12,7 +12,6 @@ BASE_URL = "http://localhost"
 # URL of the actual Codebender website
 LIVE_SITE_URL = "http://codebender.cc"
 
-
 # User whose projects we'd like to compile in our compile_tester
 # test case(s).
 COMPILE_TESTER_URL = "/user/cb_compile_tester"
@@ -35,6 +34,9 @@ _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
 TEST_DATA_DIR = _rel_path('..', 'test_data')
 TEST_DATA_BLANK_PROJECT = os.path.join(TEST_DATA_DIR, 'blank_project.ino')
 TEST_DATA_BLANK_PROJECT_ZIP = os.path.join(TEST_DATA_DIR, 'blank_project.zip')
+
+# Directory in which the local compile tester files are stored.
+COMPILE_TESTER_DIR = os.path.join(TEST_DATA_DIR, 'cb_compile_tester')
 
 # Set up Selenium Webdrivers to be used for selenium tests
 

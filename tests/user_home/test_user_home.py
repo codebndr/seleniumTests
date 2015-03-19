@@ -60,30 +60,15 @@ class TestUserHome(SeleniumTestCase):
         """Tests that we can successfully upload `test_fname`.
         `project_name` is the expected name of the project; by
         default it is inferred from the file name.
+        We delete the project if it is successfully uploaded.
         """
-
-        # A tempfile is used here since we want the name to be
-        # unique; if the file has already been successfully uploaded
-        # then the test might give a false-positive.
-        with temp_copy(test_fname) as test_file:
-            self.dropzone_upload("#dropzoneForm", test_file.name)
-            if project_name is None:
-                project_name = os.path.split(test_file.name)[-1].split('.')[0]
-
-            # The upload was successful <==> we get a green "check" on its
-            # Dropzone upload indicator
-            self.get_element(By.CSS_SELECTOR, '#dropzoneForm .dz-success')
-
-        # Make sure the project shows up in the Projects list
-        last_project = self.get_element(By.CSS_SELECTOR,
-            '#sidebar-list-main li:last-child .project_link')
-
-        assert last_project.text == project_name
-
+        name, _ = self.upload_project(test_fname, project_name=project_name)
+        if project_name is not None:
+            assert name == project_name
         # Cleanup. If the above assertion failed, then we leave
         # garbage behind. This is unavoidable for now since we don't
         # have proper test fixtures. (TODO?)
-        self.delete_project(project_name)
+        self.delete_project(name)
 
     def test_upload_project_ino(self):
         """Tests that we can upload a .ino file."""
