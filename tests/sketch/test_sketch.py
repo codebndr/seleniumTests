@@ -1,5 +1,6 @@
 import time
-
+import codebender_testing.utils
+from selenium.webdriver import ActionChains
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -100,14 +101,21 @@ class TestSketch(SeleniumTestCase):
         driver.execute_script(
         '''
         var node = document.createElement('input');
-        node.setAttribute('id', 'inputElement')
+        node.setAttribute('id', 'inputElement');
         node.style.visibility = 'visible';
-        node.style.type = 'file'
-        document.getElementById('dropzoneForm').appendChild(node)
+        node.style.type = 'file';
+        document.getElementById('dropzoneForm').appendChild(node);
         '''
         )
         input_element = self.get_element(By.ID, 'inputElement')
         input_element.send_keys('/home/codedender/success.c')
+        dropzone = self.get_element(By.ID, 'dropzoneForm')
+        action_chains = ActionChains(driver)
+        action_chains.drag_and_drop(input_element, dropzone)
+        #driver.execute_script('''document.forms['dropzoneForm'].submit()''')
+        driver.implicitly_wait(5)
+        fname = "success.c"
+        self.dropzone_upload(dropzone, fname)
         assert "success.c" in driver.page_source
 
     def test_add_projecfile_unsupported(self):
@@ -116,7 +124,7 @@ class TestSketch(SeleniumTestCase):
         input_element.send_keys('/home/codedender/success.txt')
         assert "success.txt" not in self.driver.page_source
 
-    def test_delete_file(self):
+    def test_delete_modal(self):
         """Tests file delete modal """
         delete_file_button = self.get_element(By.CLASS_NAME, 'icon-remove')
         delete_file_button.click()
@@ -127,7 +135,10 @@ class TestSketch(SeleniumTestCase):
         """ Verifies that file has been deleted """
         confirm_delete_button = self.get_element(By.ID, 'filedeleteButton')
         confirm_delete_button.click()
-        self.driver.refresh()
+        #self.driver.refresh()
+        element = WebDriverWait(self.driver, 10).until(
+            expected_conditions.element_to_be_clickable((By.CLASS_NAME, "filelist"))
+        )
         assert 'test_file.txt' not in self.driver.page_source
 
      
