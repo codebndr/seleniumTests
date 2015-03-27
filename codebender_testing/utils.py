@@ -203,6 +203,15 @@ class CodebenderSeleniumBot(object):
             # 'Log In' is not displayed, so we're already logged in.
             pass
 
+    def logout(self):
+        """Logs out of the site."""
+        try:
+            logout_button = self.driver.find_element_by_id("logout")
+            logout_button.send_keys(Keys.ENTER)
+        except NoSuchElementException:
+            # 'Log out' is not displayed, so we're already logged out.
+            pass
+
     def get_element(self, *locator):
         """Waits for an element specified by *locator (a tuple of
         (By.<something>, str)), then returns it if it is found."""
@@ -217,11 +226,11 @@ class CodebenderSeleniumBot(object):
             expected_conditions.visibility_of_all_elements_located_by(locator))
         return self.driver.find_elements(*locator)
 
-    def get(self, selector):
+    def find(self, selector):
         """Alias for `self.get_element(By.CSS_SELECTOR, selector)`."""
         return self.get_element(By.CSS_SELECTOR, selector)
 
-    def get_all(self, selector):
+    def find_all(self, selector):
         """Alias for `self.get_elements(By.CSS_SELECTOR, selector)`."""
         return self.get_elements(By.CSS_SELECTOR, selector)
 
@@ -339,6 +348,10 @@ class SeleniumTestCase(CodebenderSeleniumBot):
     @pytest.fixture(scope="class")
     def tester_login(self):
         self.login()
+
+    @pytest.fixture(scope="class")
+    def tester_logout(self):
+        self.logout()
 
 
 class VerificationError(Exception):
