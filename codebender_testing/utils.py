@@ -4,6 +4,7 @@ from time import strftime
 import json
 import os
 import re
+import shutil
 import tempfile
 
 from selenium.common.exceptions import NoSuchElementException
@@ -77,9 +78,8 @@ def temp_copy(fname):
     """
     extension = fname.split('.')[-1]
     with tempfile.NamedTemporaryFile(mode='w+b', suffix='.%s' % extension) as copy:
-        with open(fname, 'r') as original:
-            for line in original:
-                copy.write(line)
+        with open(fname, 'rb') as original:
+            shutil.copyfileobj(original, copy)
         copy.flush()
         yield copy
 
@@ -101,7 +101,7 @@ class CodebenderSeleniumBot(object):
         """
         if webdriver is None:
             webdriver = WEBDRIVERS.keys()[0]
-        self.driver = WEBDRIVERS[webdriver]
+        self.driver = WEBDRIVERS[webdriver]()
 
         if url is None:
             url = BASE_URL
@@ -203,6 +203,15 @@ class CodebenderSeleniumBot(object):
             # 'Log In' is not displayed, so we're already logged in.
             pass
 
+    def logout(self):
+        """Logs out of the site."""
+        try:
+            logout_button = self.driver.find_element_by_id("logout")
+            logout_button.send_keys(Keys.ENTER)
+        except NoSuchElementException:
+            # 'Log out' is not displayed, so we're already logged out.
+            pass
+
     def get_element(self, *locator):
         """Waits for an element specified by *locator (a tuple of
         (By.<something>, str)), then returns it if it is found."""
@@ -217,11 +226,11 @@ class CodebenderSeleniumBot(object):
             expected_conditions.visibility_of_all_elements_located_by(locator))
         return self.driver.find_elements(*locator)
 
-    def get(self, selector):
+    def find(self, selector):
         """Alias for `self.get_element(By.CSS_SELECTOR, selector)`."""
         return self.get_element(By.CSS_SELECTOR, selector)
 
-    def get_all(self, selector):
+    def find_all(self, selector):
         """Alias for `self.get_elements(By.CSS_SELECTOR, selector)`."""
         return self.get_elements(By.CSS_SELECTOR, selector)
 
@@ -287,9 +296,13 @@ class CodebenderSeleniumBot(object):
         format string, which will be formatted appropriately.
         `iframe` specifies whether the urls pointed to by `selector` are contained
         within an iframe.
+        If the `--full` argument is provided (and hence
+        `self.run_full_compile_tests` is `True`, we do not log, and limit the
+        number of sketches compiled to 1.
         """
-        if logfile is None:
-            for sketch in sketches:
+        sketch_limit = None if self.run_full_compile_tests else 1
+        if logfile is None or not self.run_full_compile_tests:
+            for sketch in sketches[:sketch_limit]:
                 self.compile_sketch(sketch, iframe=iframe)
         else:
             log_entry = {'url': self.site_url, 'succeeded': [], 'failed': []}
@@ -322,7 +335,7 @@ class SeleniumTestCase(CodebenderSeleniumBot):
 
     @classmethod
     @pytest.fixture(scope="class", autouse=True)
-    def _testcase_attrs(cls, webdriver, testing_url):
+    def _testcase_attrs(cls, webdriver, testing_url, testing_full):
         """Sets up any class attributes to be used by any SeleniumTestCase.
         Here, we just store fixtures as class attributes. This allows us to avoid
         the pytest boilerplate of getting a fixture value, and instead just
@@ -330,10 +343,15 @@ class SeleniumTestCase(CodebenderSeleniumBot):
         """
         cls.driver = webdriver
         cls.site_url = testing_url
+        cls.run_full_compile_tests = testing_full
 
     @pytest.fixture(scope="class")
     def tester_login(self):
         self.login()
+
+    @pytest.fixture(scope="class")
+    def tester_logout(self):
+        self.logout()
 
 
 class VerificationError(Exception):
