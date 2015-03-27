@@ -287,9 +287,13 @@ class CodebenderSeleniumBot(object):
         format string, which will be formatted appropriately.
         `iframe` specifies whether the urls pointed to by `selector` are contained
         within an iframe.
+        If the `--full` argument is provided (and hence
+        `self.run_full_compile_tests` is `True`, we do not log, and limit the
+        number of sketches compiled to 1.
         """
-        if logfile is None:
-            for sketch in sketches:
+        sketch_limit = None if self.run_full_compile_tests else 1
+        if logfile is None or not self.run_full_compile_tests:
+            for sketch in sketches[:sketch_limit]:
                 self.compile_sketch(sketch, iframe=iframe)
         else:
             log_entry = {'url': self.site_url, 'succeeded': [], 'failed': []}
@@ -322,7 +326,7 @@ class SeleniumTestCase(CodebenderSeleniumBot):
 
     @classmethod
     @pytest.fixture(scope="class", autouse=True)
-    def _testcase_attrs(cls, webdriver, testing_url):
+    def _testcase_attrs(cls, webdriver, testing_url, testing_full):
         """Sets up any class attributes to be used by any SeleniumTestCase.
         Here, we just store fixtures as class attributes. This allows us to avoid
         the pytest boilerplate of getting a fixture value, and instead just
@@ -330,6 +334,7 @@ class SeleniumTestCase(CodebenderSeleniumBot):
         """
         cls.driver = webdriver
         cls.site_url = testing_url
+        cls.run_full_compile_tests = testing_full
 
     @pytest.fixture(scope="class")
     def tester_login(self):

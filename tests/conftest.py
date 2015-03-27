@@ -26,11 +26,18 @@ def pytest_addoption(parser):
     """Adds command line options to py.test."""
     parser.addoption("--url", action="store", default=BASE_URL,
                      help="URL to use for testing, e.g. http://localhost, http://codebender.cc")
+    parser.addoption("--full", action="store_true", default=False,
+                     help="Whether to run the complete set of compile tests.")
 
 @pytest.fixture(scope="class")
 def testing_url(request):
     """A fixture to get the --url parameter."""
     return request.config.getoption("--url")
+
+@pytest.fixture(scope="class")
+def testing_full(request):
+    """A fixture to get the --full parameter."""
+    return request.config.getoption("--full")
 
 @pytest.fixture(autouse=True)
 def skip_by_site(request, testing_url):
