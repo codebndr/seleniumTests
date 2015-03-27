@@ -101,7 +101,7 @@ class CodebenderSeleniumBot(object):
         """
         if webdriver is None:
             webdriver = WEBDRIVERS.keys()[0]
-        self.driver = WEBDRIVERS[webdriver]
+        self.driver = WEBDRIVERS[webdriver]()
 
         if url is None:
             url = BASE_URL
