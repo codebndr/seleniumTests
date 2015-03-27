@@ -28,8 +28,10 @@ class TestCompileTester(SeleniumTestCase):
         """Tests that we can upload all of cb_compile_tester's projects
         (stored locally in test_data/cb_compile_tester), compile them,
         and finally delete them."""
+        upload_limit = None if self.run_full_compile_tests else 1
+
         test_files = [os.path.join(COMPILE_TESTER_DIR, name)
-            for name in next(os.walk(COMPILE_TESTER_DIR))[2]]
+            for name in next(os.walk(COMPILE_TESTER_DIR))[2]][:upload_limit]
         projects = [self.upload_project(fname) for fname in test_files]
         project_names, project_urls = zip(*projects)
 

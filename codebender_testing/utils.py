@@ -4,6 +4,7 @@ from time import strftime
 import json
 import os
 import re
+import shutil
 import tempfile
 
 from selenium.common.exceptions import NoSuchElementException
@@ -77,9 +78,8 @@ def temp_copy(fname):
     """
     extension = fname.split('.')[-1]
     with tempfile.NamedTemporaryFile(mode='w+b', suffix='.%s' % extension) as copy:
-        with open(fname, 'r') as original:
-            for line in original:
-                copy.write(line)
+        with open(fname, 'rb') as original:
+            shutil.copyfileobj(original, copy)
         copy.flush()
         yield copy
 
