@@ -28,14 +28,15 @@ class TestSketch(SeleniumTestCase):
         """Makes sure we are logged in and have a project open before
         performing any of these tests."""
         self.open_project()
-        # I get a StaleElementReferenceException without
-        # this wait. TODO: figure out how to get around this.
-        time.sleep(3)
 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
-        compile_button = self.driver.find_element_by_id("compile")
+        compile_button = self.get_element(By.ID, "compile")
         compile_button.click()
+
+        # test progress bar is visible
+        progress_bar = self.get_element(By.ID, 'progress')
+        assert progress_bar.is_displayed()
 
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
@@ -95,3 +96,42 @@ class TestSketch(SeleniumTestCase):
         # Cleanup: delete the project we just created.
         self.delete_project("%s copy" % TEST_PROJECT_NAME)
 
+
+    def test_add_projectfile_direct(self):
+        """ Tests that new file can be added to project using create-new-file
+        field """
+        self.open_project()
+
+        add_button = self.get_element(By.CLASS_NAME, 'icon-plus')
+        add_button.click()
+        create_field = self.get_element(By.ID, 'createfield')
+        create_field.send_keys('test_file.txt')
+        create_button = self.get_element(By.CLASS_NAME, 'btn')
+        create_button.click()
+        self.driver.refresh()
+        assert 'test_file.txt' in self.driver.page_source
+
+    '''
+    def test_add_projectfile_upload(self):
+        """ Tests that new file can be added to project using upload dialog """
+        add_button = self.get_element(By.CLASS_NAME, 'icon-plus')
+        add_button.click()
+        drop_zone = self.get_element(By.CLASS_NAME, 'dz-clickable')
+        drop_zone.click()
+        self.driver.get("http://localhost/js/dropzone/min.js")
+        self.driver.execute_script("self.get_element(By.NAME,'uploadType').value = '/test.h'")
+        #file_input_element = self.get_element(By.NAME, 'uploadType')'''
+
+    def test_delete_file(self):
+        """Tests file delete modal """
+        delete_file_button = self.get_element(By.CLASS_NAME, 'icon-remove')
+        delete_file_button.click()
+        delete_modal = self.get_element(By.ID, 'filedeleteModal')
+        assert delete_modal.is_displayed()
+
+    def test_verify_deletion(self):
+        """ Verifies that file has been deleted """
+        confirm_delete_button = self.get_element(By.ID, 'filedeleteButton')
+        confirm_delete_button.click()
+        self.driver.refresh()
+        assert 'test_file.txt' not in self.driver.page_source
