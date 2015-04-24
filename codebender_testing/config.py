@@ -12,6 +12,10 @@ BASE_URL = "http://localhost"
 # URL of the actual Codebender website
 LIVE_SITE_URL = "http://codebender.cc"
 
+# Names of sources (i.e. repositories) used to generate the codebender site.
+SOURCE_BACHELOR = 'bachelor'
+SOURCE_CODEBENDER_CC = 'codebender_cc'
+
 # User whose projects we'd like to compile in our compile_tester
 # test case(s).
 COMPILE_TESTER_URL = "/user/cb_compile_tester"

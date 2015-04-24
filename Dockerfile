@@ -5,9 +5,9 @@ FROM ubuntu:12.04
 
 # Install requirements and their dependencies
 RUN apt-get update && apt-get install -y \
+  firefox \
   libxml2-dev \
   libxslt1-dev \
-  firefox \
   python3 \
   python3-dev \
   python3-setuptools
