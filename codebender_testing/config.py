@@ -1,7 +1,7 @@
 import os
 
 from selenium import webdriver
-
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 def _rel_path(*args):
     """Forms a path relative to this file's directory."""
@@ -55,18 +55,55 @@ def _get_firefox_profile():
     )
     return firefox_profile
 
-# Webdrivers to be used for testing. Specifying additional webdrivers here
-# will cause every test to be re-run using that webdriver.
-# These webdrivers are specified as lambdas to allow for "lazy" evaluation.
-# The lambda invocation will return the actual webdriver and open up a
-# browser window, and we don't want a browser window to open whenever this
-# module is imported (hence the need for lazy evaluation).
-WEBDRIVERS = {
-    "firefox": lambda: webdriver.Firefox(firefox_profile=_get_firefox_profile()),
-    # "chrome": lambda: webdriver.Chrome()
-}
 
-# Credentials to use when logging into the site via selenium
+def _get_chrome_profile():
+    # TODO
+    return None
+
+
+def get_browsers(config_path=None):
+    """Returns a list of capabilities. Each item in the list will cause
+    the entire suite of tests to be re-run for a browser with those
+    particular capabilities."""
+    # TODO: read from browsers.yaml, and allow specifying custom config file.
+    return [
+        {
+            "browserName": "firefox", # OK with other defaults for now.
+        }
+    ]
+
+
+def create_webdriver(command_executor, desired_capabilities):
+    """Creates a new remote webdriver with the following properties:
+      - The remote URL of the webdriver is defined by `command_executor`.
+      - desired_capabilities is a dict with the same interpretation as
+        it is used elsewhere in selenium. If no browserName key is present,
+        we default to firefox.
+    """
+    if 'browserName' not in desired_capabilities:
+        desired_capabilities['browserName'] = 'firefox'
+    browser_name = desired_capabilities['browserName']
+    # Fill in defaults from DesiredCapabilities.{CHROME,FIREFOX} if they are
+    # missing from the desired_capabilities dict above.
+    _capabilities = desired_capabilities
+    if browser_name == "chrome":
+        desired_capabilities = DesiredCapabilities.CHROME.copy()
+        desired_capabilities.update(_capabilities)
+        browser_profile = _get_chrome_profile()
+    elif browser_name == "firefox":
+        desired_capabilities = DesiredCapabilities.FIREFOX.copy()
+        desired_capabilities.update(_capabilities)
+        browser_profile = _get_firefox_profile()
+    else:
+        raise ValueError("Invalid webdriver %s (only chrome and firefox are supported)" % browser_name)
+    return webdriver.Remote(
+        command_executor=command_executor,
+        desired_capabilities=desired_capabilities,
+        browser_profile=browser_profile,
+    )
+
+
+# Credentials to use when logging into the bachelor site
 TEST_CREDENTIALS = {
     "username": "tester",
     "password": "testerPASS"
@@ -75,4 +112,4 @@ TEST_CREDENTIALS = {
 TEST_PROJECT_NAME = "test_project"
 
 # How long we wait until giving up on trying to locate an element
-ELEMENT_FIND_TIMEOUT = 5
+ELEMENT_FIND_TIMEOUT = 10
