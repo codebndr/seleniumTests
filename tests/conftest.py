@@ -17,27 +17,43 @@ from codebender_testing import config
 def pytest_addoption(parser):
     """Adds command line options to the testing suite."""
 
-    parser.addoption("--url", action="store", default=config.BASE_URL,
+    parser.addoption("-U", "--url", action="store", default=config.BASE_URL,
                      help="URL to use for testing, e.g. http://localhost, http://codebender.cc")
 
-    parser.addoption("--full", action="store_true", default=False,
-                     help="Run the complete set of compile tests (a minimal set of tests is run by default).")
+    parser.addoption("-F", "--full", action="store_true", default=False,
+                     help="Run the complete set of compile tests "
+                          "(a minimal set of tests is run by default).")
 
-    parser.addoption("--source", action="store", default=config.SOURCE_BACHELOR,
+    parser.addoption("-S", "--source", action="store", default=config.SOURCE_BACHELOR,
                      help="Indicate the source used to generate the repo. "
-                          "By default, we assume `bachelor`.")
+                          "By default, we assume `bachelor`. "
+                          "You can instead use `codebender_cc` for the live site.")
+
+    parser.addoption("-C", "--capabilities", action="store",
+                     default=config.DEFAULT_CAPABILITIES_FILE_PATH,
+                     help="Custom path to a YAML file containing a capability list.")
 
 
-@pytest.fixture(scope="session", params=config.get_browsers())
-def webdriver(request):
+def pytest_generate_tests(metafunc):
+    """Special function used by pytest to configure test generation."""
+
+    # Paremetrize the desired_capabilities fixture on each of the capabilities
+    # objects in the YAML file.
+    if 'desired_capabilities' in metafunc.fixturenames:
+        capabilities_path = metafunc.config.option.capabilities
+        metafunc.parametrize('desired_capabilities',
+                             config.get_browsers(capabilities_path),
+                             scope="session")
+
+
+@pytest.fixture(scope="session")
+def webdriver(request, desired_capabilities):
     """Returns a webdriver that persists across the entire test session,
     and registers a finalizer to close the browser once the session is
     complete. The entire test session is repeated once per driver.
     """
 
-    # TODO: maybe have a different way of specifying this (?)
     command_executor = os.environ['CODEBENDER_SELENIUM_HUB_URL']
-    desired_capabilities = request.param
 
     driver = config.create_webdriver(command_executor, desired_capabilities)
 
@@ -113,7 +129,7 @@ def requires_source(request, source):
 @pytest.fixture(autouse=True)
 def requires_url(request, testing_url):
     """Skips tests that require a certain site URL in order to run properly.
-    This is strictly more specific than skip_by_source; consider using that
+    This is strictly more specific than requires_source; consider using that
     marker instead.
 
     This functionality should be invoked as a pytest marker, e.g.:
@@ -128,3 +144,26 @@ def requires_url(request, testing_url):
         required_url = request.node.get_marker('requires_url').args[0]
         if required_url.rstrip('/') != testing_url.rstrip('/'):
             pytest.skip('skipped test that requires --url=%s' % required_url)
+
+
+@pytest.fixture(autouse=True)
+def requires_extension(request, webdriver):
+    """Mark that a test requires the codebender extension.
+    Ideally, this marker would not be necessary. However, it is used so that we
+    skip tests when running under chrome that require the extension (for now).
+    This is due to the fact that the chrome driver leaves open the
+    "confirm extension" dialogue without actually installing it.
+
+     This functionality should be invoked as a pytest marker, e.g.:
+
+    ```
+    @pytest.mark.requires_extension
+    def test_some_feature():
+        ...
+    ```
+    """
+    if request.node.get_marker('requires_extension'):
+        if webdriver.desired_capabilities["browserName"] == "chrome":
+            pytest.skip("skipped test that requires codebender extension. "
+                        "The current webdriver is Chrome, and the ChromeDriver "
+                        "does not properly install extensions.")

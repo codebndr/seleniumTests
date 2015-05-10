@@ -1,7 +1,10 @@
 import os
 
 from selenium import webdriver
+from selenium.webdriver import chrome
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import yaml
+
 
 def _rel_path(*args):
     """Forms a path relative to this file's directory."""
@@ -33,6 +36,14 @@ LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
 
 _EXTENSIONS_DIR = _rel_path('..', 'extensions')
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
+_CHROME_EXTENSION_FNAME = 'codebendercc-extension.crx'
+
+# Maximum version number that we can use the Chrome extension with.
+# For versions higher than this, we need to use the newer Codebender app
+CHROME_EXT_MAX_CHROME_VERSION = 41
+
+# Path to YAML file specifying capability list
+DEFAULT_CAPABILITIES_FILE_PATH = _rel_path('capabilities.yaml')
 
 # Files used for testing
 TEST_DATA_DIR = _rel_path('..', 'test_data')
@@ -55,22 +66,19 @@ def _get_firefox_profile():
     )
     return firefox_profile
 
-
-def _get_chrome_profile():
-    # TODO
-    return None
-
-
-def get_browsers(config_path=None):
+def get_browsers(capabilities_file_path=None):
     """Returns a list of capabilities. Each item in the list will cause
     the entire suite of tests to be re-run for a browser with those
-    particular capabilities."""
-    # TODO: read from browsers.yaml, and allow specifying custom config file.
-    return [
-        {
-            "browserName": "firefox", # OK with other defaults for now.
-        }
-    ]
+    particular capabilities.
+
+    `capabilities_file_path` is a path to a YAML file specifying a list of
+    capabilities for each browser. "Capabilities" are the dictionaries
+    passed as the `desired_capabilities` argument to the webdriver constructor.
+    """
+    if capabilities_file_path is None:
+        capabilities_file_path = DEFAULT_CAPABILITIES_FILE_PATH
+    stream = file(capabilities_file_path, 'rb')
+    return yaml.load(stream)
 
 
 def create_webdriver(command_executor, desired_capabilities):
@@ -86,10 +94,30 @@ def create_webdriver(command_executor, desired_capabilities):
     # Fill in defaults from DesiredCapabilities.{CHROME,FIREFOX} if they are
     # missing from the desired_capabilities dict above.
     _capabilities = desired_capabilities
+    browser_profile = None
+
     if browser_name == "chrome":
         desired_capabilities = DesiredCapabilities.CHROME.copy()
         desired_capabilities.update(_capabilities)
-        browser_profile = _get_chrome_profile()
+
+        # NOTE: the following logic is disabled since the remote webdriver is
+        # not properly installing the codebender extension. It is kept for
+        # reference until we can figure out how to properly add the Chrome
+        # extension.
+
+        # # Add chrome extension to capabilities
+        # options = chrome.options.Options()
+        # options.add_extension(os.path.join(_EXTENSIONS_DIR, _CHROME_EXTENSION_FNAME))
+        # desired_capabilities.update(options.to_capabilities())
+        # # Right now we only support up to v41 for this testing suite.
+        # if "version" in desired_capabilities:
+        #     if desired_capabilities["version"] > CHROME_EXT_MAX_CHROME_VERSION:
+        #         raise ValueError("The testing suite only supports Chrome versions up to v%d, "
+        #                          "but v%d was specified. Please specify a lower version "
+        #                          "number." % (CHROME_EXT_MAX_CHROME_VERSION, desired_capabilities["version"]))
+        # else:
+        #     desired_capabilities["version"] = CHROME_EXT_MAX_CHROME_VERSION
+
     elif browser_name == "firefox":
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
         desired_capabilities.update(_capabilities)

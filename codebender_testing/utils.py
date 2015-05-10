@@ -239,6 +239,8 @@ class CodebenderSeleniumBot(object):
         """Deletes the project specified by `project_name`. Note that this will
         navigate to the user's homepage."""
         self.open('/')
+        # Scroll to the bottom so that the footer doesn't obscure anything
+        self.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         created_project = self.get_element(By.LINK_TEXT, project_name)
         delete_button_li = created_project.find_element_by_xpath('..')
         delete_button = delete_button_li.find_element_by_css_selector('button:last-child')
