@@ -1,8 +1,6 @@
 import time
 
-from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
@@ -52,10 +50,12 @@ class TestSketch(SeleniumTestCase):
 
         assert boards_dropdown.first_selected_option.text == TEST_BOARD
 
+    @pytest.mark.requires_extension
     def test_ports_dropdown(self):
         """Tests that the ports dropdown exists."""
         self.get_element(By.ID, "ports")
 
+    @pytest.mark.requires_extension
     def test_run_with_no_port(self):
         """Makes sure that there is an error when we attempt to run with no
         port selected."""
@@ -65,10 +65,12 @@ class TestSketch(SeleniumTestCase):
             expected_conditions.text_to_be_present_in_element(
                 (By.ID, "operation_output"), "Please select a valid port or enable the plugin!!"))
 
+    @pytest.mark.requires_extension
     def test_speeds_dropdown(self):
         """Tests that the speeds dropdown exists."""
         self.get_element(By.ID, "baudrates")
 
+    @pytest.mark.requires_extension
     def test_serial_monitor_disables_fields(self):
         """Tests that opening the serial monitor disables the port and baudrate
         fields."""
@@ -80,7 +82,6 @@ class TestSketch(SeleniumTestCase):
 
         ports_field = self.get_element(By.ID, 'ports_placeholder')
         assert ports_field.get_attribute('disabled') == 'true'
-
 
     def test_clone_project(self):
         """Tests that clicking the 'Clone Project' link brings us to a new

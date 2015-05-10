@@ -20,7 +20,6 @@ from codebender_testing.config import BASE_URL
 from codebender_testing.config import ELEMENT_FIND_TIMEOUT
 from codebender_testing.config import TEST_CREDENTIALS
 from codebender_testing.config import TEST_PROJECT_NAME
-from codebender_testing.config import WEBDRIVERS
 
 
 # Time to wait until we give up on a DOM property becoming available.
@@ -92,16 +91,13 @@ class CodebenderSeleniumBot(object):
     # It is set via command line option in _testcase_attrs (below)
     site_url = None
 
-    def start(url=None, webdriver=None):
-        """Create the selenium webdriver, operating on `url`. We can't do this
-        in an __init__ method, otherwise py.test complains about
-        SeleniumTestCase having an init method.
-        The webdriver that is created is specified as a key into the WEBDRIVERS
-        dict (in codebender_testing.config)
+    def init(self, url=None, webdriver=None):
+        """Create a bot with the given selenium webdriver, operating on `url`.
+        We can't do this in an __init__ method, otherwise py.test complains,
+        presumably because it does something special with __init__ for test
+        cases.
         """
-        if webdriver is None:
-            webdriver = WEBDRIVERS.keys()[0]
-        self.driver = WEBDRIVERS[webdriver]()
+        self.driver = webdriver
 
         if url is None:
             url = BASE_URL
@@ -186,17 +182,22 @@ class CodebenderSeleniumBot(object):
 
         return last_project.text, last_project.get_attribute('href')
 
-    def login(self):
-        """Performs a login."""
+    def login(self, credentials=None):
+        """Performs a login. Note that the current URL may change to an
+        unspecified location when calling this function.
+        `credentials` should be a dict with keys 'username' and 'password',
+        mapped to the appropriate values."""
+        if credentials is None:
+            credentials = TEST_CREDENTIALS
         try:
             self.open()
             login_button = self.driver.find_element_by_id('login_btn')
             login_button.send_keys(Keys.ENTER)
             # Enter credentials and log in
             user_field = self.driver.find_element_by_id('username')
-            user_field.send_keys(TEST_CREDENTIALS['username'])
+            user_field.send_keys(credentials['username'])
             pass_field = self.driver.find_element_by_id('password')
-            pass_field.send_keys(TEST_CREDENTIALS['password'])
+            pass_field.send_keys(credentials['password'])
             do_login = self.driver.find_element_by_id('_submit')
             do_login.send_keys(Keys.ENTER)
         except NoSuchElementException:
@@ -238,6 +239,8 @@ class CodebenderSeleniumBot(object):
         """Deletes the project specified by `project_name`. Note that this will
         navigate to the user's homepage."""
         self.open('/')
+        # Scroll to the bottom so that the footer doesn't obscure anything
+        self.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         created_project = self.get_element(By.LINK_TEXT, project_name)
         delete_button_li = created_project.find_element_by_xpath('..')
         delete_button = delete_button_li.find_element_by_css_selector('button:last-child')
@@ -346,11 +349,15 @@ class SeleniumTestCase(CodebenderSeleniumBot):
         cls.run_full_compile_tests = testing_full
 
     @pytest.fixture(scope="class")
-    def tester_login(self):
-        self.login()
+    def tester_login(self, testing_credentials):
+        """A fixture to perform a login with the credentials provided by the
+        `testing_credentials` fixture.
+        """
+        self.login(credentials=testing_credentials)
 
     @pytest.fixture(scope="class")
     def tester_logout(self):
+        """A fixture to guarantee that we are logged out before running a test."""
         self.logout()
 
 
