@@ -1,41 +1,50 @@
 # Codebender Selenium Tests
 
 This repo contains Selenium tests for the codebender website.  The tests are
-written in Python 3, and utilize pytest as a testing framework and Selenium
+written in Python 2, and utilize pytest as a testing framework and Selenium
 for browser automation.
 
 ## Running Tests
 
-### Dependencies
+Tests are run by invoking `tox`. Run `tox --help` to see all the
+Codebender-specific arguments that can be passed to `py.test`.
 
-To run these tests, you'll need to have Python 3 installed. In addition, it is
-advantageous to have pip, a package manager for Python, in order to install
-dependencies.
+In addition to these arguments, there are certain environment variables that
+should be set when running tests:
 
-Notably, the pip2 (for Python 2) and pip3 (for Python 3) packages both attempt
-to link `/usr/local/bin/pip` to the `pip2` or `pip3` executable, respectively.
-To deal with this, you could explicitly type out `pip3` or `pip2` instead of
-`pip` whenever you use pip via the command line. (It may be best to just remove
-`/usr/local/bin/pip` entirely).
+- `CODEBENDER_SELENIUM_HUB_URL`: the URL of the Selenium Hub. If you are using
+  SauceLabs, the URL has the following format:
+  `http://{USERNAME}:{ACCESS_KEY}@ondemand.saucelabs.com:80/wd/hub`. You can
+  also use a [docker-selenium](https://github.com/SeleniumHQ/docker-selenium)
+  hub. In that case, it is necessary to link the docker-selenium instance to the
+  Docker instance from which tests are running.
+- `CODEBENDER_TEST_USER`: username that the webdriver will use to log into the
+  site in order to perform tests.
+- `CODEBENDER_TEST_PASS`: password for `CODEBENDER_TEST_USER`.
 
-To install `pip` in Ubuntu, run `$ sudo apt-get install python3
-python3-setuptools`, then `$ sudo easy_install3 pip`.
+Rather than invoking `tox` directly, the easiest way to run tests is with
+Docker. If you are not familiar with Docker, please consult the
+[documentation](http://docs.docker.com/) for an introduction.
 
-After getting set up with pip and cloning the seleniumTests repo, you should
-make sure to install all the seleniumTests dependencies by `cd`ing to your local
-clone of the repo and running `$ sudo pip3 install -r requirements-dev.txt`.
+First, build the image with `$ docker build . -t codebender/selenium`.
 
-### Invoking Tests via `tox`
+Then invoke `tox` via `docker run`. Here is a sample command to run all tests,
+where the Codebender server is running at `http://192.168.1.2:8080`:
 
-After installing dependencies, you should have the `tox` command available. To
-run all of the tests, you can simply run `$ tox` from within the cloned repo.
+```
+$ docker run -e CODEBENDER_SELENIUM_HUB_URL=http://johndoe:12345678-1234-1234-1234-12345678910@ondemand.saucelabs.com:80/wd/hub \
+             -e CODEBENDER_TEST_USER=tester \
+             -e CODEBENDER_TEST_PASS=1234 \
+             -it codebender/selenium \
+             tox -- --url http://192.168.1.2:8080 --source bachelor
+```
 
-You can also run individual tests by providing the appropriate directory or
-filename as an argument, for example: `$ tox tests/sketch`.
+### Running Tests Manually
 
-Invoking tox will also run `flake8`, which is essentially a lint checker for
-Python. It is best to fix any issues reported by `flake8` before committing
-to the repo. It can be run on its own via the command `$ flake8`.
+The recommended way of running tests is with Docker. If you would like to
+manually provision your machine to be able to run tests, you can use the
+Dockerfile as a step-by-step guide for provisioning. Then invoke `tox` to run
+tests.
 
 #### Specifying a URL for Tests
 
@@ -104,6 +113,11 @@ test the site. These mostly consist of abstractions to the Selenium framework.
 The most important class is `SeleniumTestCase`, which all of the unit test cases
 inherit from. This grants them access (via `self`) to a number of methods and
 attributes that are useful for performing codebender-specific actions.
+
+**`codebender_testing/capabilities.yaml`** defines a list of `capabilities` to
+be passed as arguments when instantiating remote webdrivers. In particular, it
+specifies the web browsers that we would like to use. Consult this file for more
+information.
 
 #### `batch/`
 
