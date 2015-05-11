@@ -38,8 +38,8 @@ TEST_DATA_BLANK_PROJECT_ZIP = os.path.join(TEST_DATA_DIR, 'blank_project.zip')
 # Directory in which the local compile tester files are stored.
 COMPILE_TESTER_DIR = os.path.join(TEST_DATA_DIR, 'cb_compile_tester')
 
-# Set up Selenium Webdrivers to be used for selenium tests
 
+# Set up Selenium Webdrivers to be used for selenium tests
 def _get_firefox_profile():
     """Returns the Firefox profile to be used for the FF webdriver.
     Specifically, we're equipping the webdriver with the Codebender
@@ -51,8 +51,15 @@ def _get_firefox_profile():
     )
     return firefox_profile
 
+# Webdrivers to be used for testing. Specifying additional webdrivers here
+# will cause every test to be re-run using that webdriver.
+# These webdrivers are specified as lambdas to allow for "lazy" evaluation.
+# The lambda invocation will return the actual webdriver and open up a
+# browser window, and we don't want a browser window to open whenever this
+# module is imported (hence the need for lazy evaluation).
 WEBDRIVERS = {
-    "firefox": webdriver.Firefox(firefox_profile=_get_firefox_profile())
+    "firefox": lambda: webdriver.Firefox(firefox_profile=_get_firefox_profile()),
+    # "chrome": lambda: webdriver.Chrome()
 }
 
 # Credentials to use when logging into the site via selenium
