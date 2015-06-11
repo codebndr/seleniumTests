@@ -70,7 +70,7 @@ class TestHome(CodebenderIframeTestCase):
 
         # test embedded sketch
         iframe = {
-            'project_name': "officeFan",
+            'project_name': "office fan",
             'user_name': "tzikis",
             'sketch_contents': "// include the SPI library:"
         }
