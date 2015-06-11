@@ -21,7 +21,7 @@ RUN pip install -U setuptools
 RUN mkdir -p /opt/codebender
 ADD . /opt/codebender/seleniumTests
 WORKDIR /opt/codebender/seleniumTests
-RUN pip install -r requirements-dev.txt
+RUN pip install -r requirements.txt
 
 COPY ssmtp.conf /etc/ssmtp/
 
