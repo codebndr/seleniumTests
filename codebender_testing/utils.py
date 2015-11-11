@@ -391,7 +391,7 @@ class CodebenderIframeTestCase(SeleniumTestCase):
         download_link = self.driver.find_element_by_class_name('download-link').text
         assert download_link == 'Download'
 
-        editor_contents = self.driver.execute_script("return editor.getValue();")
+        editor_contents = self.driver.execute_script("return editor.aceEditor.getValue();")
         assert editor_contents.split('\n')[0] == iframe['sketch_contents']
 
         assert self.check_element_exists('#cb_cf_flash_btn') == True
