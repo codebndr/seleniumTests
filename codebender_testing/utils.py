@@ -399,7 +399,7 @@ class CodebenderIframeTestCase(SeleniumTestCase):
         assert self.check_element_exists('#cb_cf_ports') == True
 
         boards_list = WebDriverWait(self.driver, 10).until(
-            EC.text_to_be_present_in_element_value((By.ID, "cb_cf_boards"), "Arduino Uno")
+            EC.text_to_be_present_in_element((By.ID, "cb_cf_boards"), "Please select a board")
         )
 
         self.driver.switch_to_default_content()
