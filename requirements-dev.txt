@@ -1,4 +1,6 @@
 flake8
+lxml
 pytest
+setuptools>=12.1
 tox
 virtualenv

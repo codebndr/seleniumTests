@@ -1,9 +1,11 @@
+from contextlib import contextmanager
 from time import gmtime
 from time import strftime
 import json
+import os
 import re
+import tempfile
 
-from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import WebDriverException
@@ -38,6 +40,24 @@ if (window.compilerflasher !== undefined) {
 }
 """
 
+_TEST_INPUT_ID = "_cb_test_input"
+
+# Creates an input into which we can upload files using Selenium.
+_CREATE_INPUT_SCRIPT = """
+var input = window.$('<input id="{input_id}" type="file" style="position: fixed">');
+window.$('body').append(input);
+""".format(input_id=_TEST_INPUT_ID)
+
+# After the file is chosen via Selenium, this script moves the file object
+# (in the DOM) to the Dropzone.
+def _move_file_to_dropzone_script(dropzone_selector):
+    return """
+var fileInput = document.getElementById('{input_id}');
+var file = fileInput.files[0];
+var dropzone = Dropzone.forElement('{selector}');
+dropzone.drop({{ dataTransfer: {{ files: [file] }} }});
+""".format(input_id=_TEST_INPUT_ID, selector=dropzone_selector)
+
 # How long (in seconds) to wait before assuming that an example
 # has failed to compile
 VERIFY_TIMEOUT = 15
@@ -47,28 +67,75 @@ VERIFICATION_SUCCESSFUL_MESSAGE = "Verification Successful"
 VERIFICATION_FAILED_MESSAGE = "Verification failed."
 
 
-class SeleniumTestCase(object):
-    """Base class for all Selenium tests."""
+@contextmanager
+def temp_copy(fname):
+    """Creates a temporary copy of the file `fname`.
+    This is useful for testing features that derive certain properties
+    from the filename, and we want a unique filename each time we run the
+    test (in case, for example, there is leftover garbage from previous
+    tests with the same name).
+    """
+    extension = fname.split('.')[-1]
+    with tempfile.NamedTemporaryFile(mode='w+b', suffix='.%s' % extension) as copy:
+        with open(fname, 'r') as original:
+            for line in original:
+                copy.write(line)
+        copy.flush()
+        yield copy
+
+
+class CodebenderSeleniumBot(object):
+    """Contains various utilities for navigating the Codebender website."""
 
     # This can be configured on a per-test case basis to use a different
     # URL for testing; e.g., http://localhost, or http://codebender.cc.
     # It is set via command line option in _testcase_attrs (below)
     site_url = None
 
-    @classmethod
-    @pytest.fixture(scope="class", autouse=True)
-    def _testcase_attrs(cls, webdriver, testing_url):
-        """Sets up any class attributes to be used by any SeleniumTestCase.
-        Here, we just store fixtures as class attributes. This allows us to avoid
-        the pytest boilerplate of getting a fixture value, and instead just
-        refer to the fixture as `self.<fixture>`.
+    def start(url=None, webdriver=None):
+        """Create the selenium webdriver, operating on `url`. We can't do this
+        in an __init__ method, otherwise py.test complains about
+        SeleniumTestCase having an init method.
+        The webdriver that is created is specified as a key into the WEBDRIVERS
+        dict (in codebender_testing.config)
         """
-        cls.driver = webdriver
-        cls.site_url = testing_url
+        if webdriver is None:
+            webdriver = WEBDRIVERS.keys()[0]
+        self.driver = WEBDRIVERS[webdriver]
 
-    @pytest.fixture(scope="class")
-    def tester_login(self):
-        self.login()
+        if url is None:
+            url = BASE_URL
+        self.site_url = url
+
+    @classmethod
+    @contextmanager
+    def session(cls, **kwargs):
+        """Start a new session with a new webdriver. Regardless of whether an
+        exception is raised, the webdriver is guaranteed to quit.
+        The keyword arguments should be interpreted as in `start`.
+
+        Sample usage:
+
+        ```
+        with CodebenderSeleniumBot.session(url="localhost",
+                                           webdriver="firefox") as bot:
+            # The browser is now open
+            bot.open("/")
+            assert "Codebender" in bot.driver.title
+        # The browser is now closed
+        ```
+
+        Test cases shouldn't need to use this method; it's mostly useful for
+        scripts, automation, etc.
+        """
+        try:
+            bot = cls()
+            bot.start(**kwargs)
+            yield bot
+            bot.driver.quit()
+        except:
+            bot.driver.quit()
+            raise
 
     def open(self, url=None):
         """Open the resource specified by `url`.
@@ -95,6 +162,30 @@ class SeleniumTestCase(object):
         project_link = self.driver.find_element_by_link_text(project_name)
         project_link.send_keys(Keys.ENTER)
 
+    def upload_project(self, test_fname, project_name=None):
+        """Tests that we can successfully upload `test_fname`.
+        `project_name` is the expected name of the project; by
+        default it is inferred from the file name.
+        Returns a pair of (the name of the project, the url of the project sketch)
+        """
+        # A tempfile is used here since we want the name to be
+        # unique; if the file has already been successfully uploaded
+        # then the test might give a false-positive.
+        with temp_copy(test_fname) as test_file:
+            self.dropzone_upload("#dropzoneForm", test_file.name)
+            if project_name is None:
+                project_name = os.path.split(test_file.name)[-1].split('.')[0]
+
+            # The upload was successful <==> we get a green "check" on its
+            # Dropzone upload indicator
+            self.get_element(By.CSS_SELECTOR, '#dropzoneForm .dz-success')
+
+        # Make sure the project shows up in the Projects list
+        last_project = self.get_element(By.CSS_SELECTOR,
+            '#sidebar-list-main li:last-child .project_link')
+
+        return last_project.text, last_project.get_attribute('href')
+
     def login(self):
         """Performs a login."""
         try:
@@ -118,6 +209,21 @@ class SeleniumTestCase(object):
         WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
             expected_conditions.visibility_of_element_located(locator))
         return self.driver.find_element(*locator)
+
+    def get_elements(self, *locator):
+        """Like `get_element`, but returns a list of all elements matching
+        the selector."""
+        WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
+            expected_conditions.visibility_of_all_elements_located_by(locator))
+        return self.driver.find_elements(*locator)
+
+    def get(self, selector):
+        """Alias for `self.get_element(By.CSS_SELECTOR, selector)`."""
+        return self.get_element(By.CSS_SELECTOR, selector)
+
+    def get_all(self, selector):
+        """Alias for `self.get_elements(By.CSS_SELECTOR, selector)`."""
+        return self.get_elements(By.CSS_SELECTOR, selector)
 
     def delete_project(self, project_name):
         """Deletes the project specified by `project_name`. Note that this will
@@ -151,9 +257,28 @@ class SeleniumTestCase(object):
             raise VerificationError(compile_result)
 
 
-    def compile_all_sketches(self, url, selector, iframe=False, logfile=None):
-        """Compiles all projects on the page at `url`. `selector` is a CSS selector
+    def dropzone_upload(self, selector, fname):
+        """Uploads a file specified by `fname` via the Dropzone within the
+        element specified by `selector`. (Dropzone refers to Dropzone.js)
+        """
+        # Create an artificial file input.
+        self.execute_script(_CREATE_INPUT_SCRIPT)
+        test_input = self.get_element(By.ID, _TEST_INPUT_ID)
+        test_input.send_keys(fname)
+        self.execute_script(_move_file_to_dropzone_script(selector))
+
+    def compile_all_sketches(self, url, selector, **kwargs):
+        """Compiles all sketches on the page at `url`. `selector` is a CSS selector
         that should select all relevant <a> tags containing links to sketches.
+        See `compile_sketches` for the possible keyword arguments that can be specified.
+        """
+        self.open(url)
+        sketches = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector=selector))
+        assert len(sketches) > 0
+        self.compile_sketches(sketches, **kwargs)
+
+    def compile_sketches(self, sketches, iframe=False, logfile=None):
+        """Compiles the sketches with URLs given by the `sketches` list.
         `logfile` specifies a path to a file to which test results will be
         logged. If it is not `None`, compile errors will not cause the test
         to halt, but rather be logged to the given file. `logfile` may be a time
@@ -161,10 +286,6 @@ class SeleniumTestCase(object):
         `iframe` specifies whether the urls pointed to by `selector` are contained
         within an iframe.
         """
-        self.open(url)
-        sketches = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector=selector))
-        assert len(sketches) > 0
-
         if logfile is None:
             for sketch in sketches:
                 self.compile_sketch(sketch, iframe=iframe)
@@ -185,15 +306,32 @@ class SeleniumTestCase(object):
             json.dump(log_entry, f)
             f.close()
 
-
     def execute_script(self, script, *deps):
         """Waits for all JavaScript variables in `deps` to be defined, then
-        executes the given script. Especially useful for waiting for things like
-        jQuery to become available for use."""
+        executes the given script."""
         if len(deps) > 0:
             WebDriverWait(self.driver, DOM_PROPERTY_DEFINED_TIMEOUT).until(
                 dom_properties_defined(*deps))
         return self.driver.execute_script(script)
+
+
+class SeleniumTestCase(CodebenderSeleniumBot):
+    """Base class for all Selenium tests."""
+
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
+    def _testcase_attrs(cls, webdriver, testing_url):
+        """Sets up any class attributes to be used by any SeleniumTestCase.
+        Here, we just store fixtures as class attributes. This allows us to avoid
+        the pytest boilerplate of getting a fixture value, and instead just
+        refer to the fixture as `self.<fixture>`.
+        """
+        cls.driver = webdriver
+        cls.site_url = testing_url
+
+    @pytest.fixture(scope="class")
+    def tester_login(self):
+        self.login()
 
 
 class VerificationError(Exception):
