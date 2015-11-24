@@ -1,3 +1,4 @@
 flake8
 pytest==2.6.4
+pyyaml
 selenium==2.44.0
