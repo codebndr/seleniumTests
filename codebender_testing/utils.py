@@ -14,6 +14,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import pytest
 
 from codebender_testing.config import BASE_URL
@@ -330,6 +331,15 @@ class CodebenderSeleniumBot(object):
                 dom_properties_defined(*deps))
         return self.driver.execute_script(script)
 
+    def check_iframe(self):
+        """Returns the contents of an iframe [project_name, user_name, sketch_contents]"""
+        self.driver.switch_to_frame(driver.find_element_by_tag_name('iframe'))
+        project_name = self.driver.find_element_by_class_name('projectName').text
+        user_name = self.driver.find_element_by_class_name('userName').text
+        sketch_contents = self.driver.execute_script("return editor.getValue();")
+        self.driver.switch_to_default_content()
+        return [project_name, user_name, sketch_contents]
+
 
 class SeleniumTestCase(CodebenderSeleniumBot):
     """Base class for all Selenium tests."""
@@ -358,6 +368,62 @@ class SeleniumTestCase(CodebenderSeleniumBot):
         """A fixture to guarantee that we are logged out before running a test."""
         self.logout()
 
+class CodebenderIframeTestCase(SeleniumTestCase):
+    """base class for testing iframes"""
+
+    @pytest.fixture(scope="class")
+    def get_iframe(self, selector, iframe):
+        self.driver.switch_to_frame(self.driver.find_element_by_css_selector(selector))
+
+        project_name = self.driver.find_element_by_class_name('projectName').text
+        assert project_name == iframe['project_name']
+
+        if iframe['user_name']:
+            user_name = self.driver.find_element_by_class_name('userName').text
+            assert user_name == iframe['user_name']
+
+        edit_button = self.driver.find_element_by_id('edit-button').text
+        assert edit_button == 'Edit'
+
+        clone_link = self.driver.find_element_by_class_name('clone-link').text
+        assert clone_link == 'Clone & Edit'
+
+        download_link = self.driver.find_element_by_class_name('download-link').text
+        assert download_link == 'Download'
+
+        editor_contents = self.driver.execute_script("return editor.aceEditor.getValue();")
+        assert editor_contents.split('\n')[0] == iframe['sketch_contents']
+
+        assert self.check_element_exists('#cb_cf_flash_btn') == True
+        assert self.check_element_exists('#cb_cf_boards') == True
+        assert self.check_element_exists('#cb_cf_ports') == True
+
+        boards_list = WebDriverWait(self.driver, 10).until(
+            EC.text_to_be_present_in_element((By.ID, "cb_cf_boards"), "Please select a board")
+        )
+
+        self.driver.switch_to_default_content()
+
+    @pytest.fixture(scope="class")
+    def get_serial_monitor(self, selector):
+        self.driver.switch_to_frame(self.driver.find_element_by_css_selector(selector))
+
+        title = self.driver.find_element_by_css_selector('.well > h4').text.strip()
+        assert title == 'Serial Monitor:'
+
+        ports_label = self.driver.find_element_by_css_selector('.well > span').text.strip()
+        assert ports_label == 'Port:'
+
+        assert self.check_element_exists('#cb_cf_ports') == True
+        assert self.check_element_exists('#cb_cf_baud_rates') == True
+        assert self.check_element_exists('#cb_cf_serial_monitor_connect') == True
+
+    def check_element_exists(self, css_path):
+        try:
+            element = self.driver.find_element_by_css_selector(css_path)
+            return True
+        except NoSuchElementException:
+            return False
 
 class VerificationError(Exception):
     """An exception representing a failed verification of a sketch."""
