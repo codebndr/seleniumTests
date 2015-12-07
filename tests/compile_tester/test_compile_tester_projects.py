@@ -20,7 +20,8 @@ class TestCompileTester(SeleniumTestCase):
     def test_compile_all_user_projects(self):
         """Tests that all library examples compile successfully."""
         self.compile_all_sketches(COMPILE_TESTER_URL, '#user_projects tbody a',
-            iframe=True, log_file=COMPILE_TESTER_LOGFILE)
+            iframe=True, logfile=COMPILE_TESTER_LOGFILE,
+            compile_type='sketch', create_report=True)
 
     # Here we require the bachelor site since cb_compile_tester's projects are
     # already uploaded to the live site.
@@ -36,7 +37,7 @@ class TestCompileTester(SeleniumTestCase):
         projects = [self.upload_project(fname) for fname in test_files]
         project_names, project_urls = zip(*projects)
 
-        self.compile_sketches(project_urls, logfile=COMPILE_TESTER_LOGFILE)
+        self.compile_sketches(project_urls, logfile=COMPILE_TESTER_LOGFILE,
+                              compile_type='sketch', create_report=True)
         for name in project_names:
             self.delete_project(name)
-
