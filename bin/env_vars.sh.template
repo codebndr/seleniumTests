@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+SAUCELABS_USER=""
+SAUCELABS_KEY=""
+export CODEBENDER_SELENIUM_HUB_URL=http://${SAUCELABS_USER}:${SAUCELABS_KEY}@ondemand.saucelabs.com:80/wd/hub
+export CODEBENDER_TEST_USER=""
+export CODEBENDER_TEST_PASS=""
+export DISQUS_ACCESS_TOKEN=""
+export DISQUS_API_SECRET=""
+export DISQUS_API_PUBLIC=""
+export DISQUS_SSO_ID=""
+export DISQUS_SSO_USERNAME=""
+export DISQUS_SSO_EMAIL=""
+export EMAIL=""
