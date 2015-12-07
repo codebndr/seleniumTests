@@ -7,5 +7,12 @@
 #   https://docs.saucelabs.com/reference/test-configuration
 
 - browserName: "firefox"
+  version: 42
+  public: "public restricted"
+  seleniumVersion: "2.48.0"
+  maxDuration: 10800
 - browserName: "chrome"
   version: 41
+  public: "public restricted"
+  seleniumVersion: "2.48.0"
+  maxDuration: 10800
