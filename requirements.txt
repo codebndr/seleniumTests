@@ -5,5 +5,8 @@ cryptography
 tox
 virtualenv
 pyyaml
-pytest==2.6.4
-selenium==2.44.0
+pytest
+selenium
+simplejson
+disqus-python
+requests
