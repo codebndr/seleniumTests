@@ -4,16 +4,26 @@ from selenium import webdriver
 from selenium.webdriver import chrome
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import yaml
+import simplejson
 
 
 def _rel_path(*args):
     """Forms a path relative to this file's directory."""
     return os.path.join(os.path.dirname(__file__), *args)
 
+def get_path(directory, filename=None):
+    path = os.path.join(os.path.dirname( __file__ ), '..', directory)
+    if filename:
+        path = os.path.join(os.path.dirname( __file__ ), '..', directory, filename)
+    return os.path.abspath(path)
+
+def jsondump(data):
+    return simplejson.dumps(data, sort_keys=True, indent=4 * ' ')
+
 # URL of the default site to be used for testing
 BASE_URL = "http://localhost"
 # URL of the actual Codebender website
-LIVE_SITE_URL = "http://codebender.cc"
+LIVE_SITE_URL = "https://codebender.cc"
 
 # Names of sources (i.e. repositories) used to generate the codebender site.
 SOURCE_BACHELOR = 'bachelor'
@@ -47,12 +57,23 @@ DEFAULT_CAPABILITIES_FILE_PATH = _rel_path('capabilities.yaml')
 
 # Files used for testing
 TEST_DATA_DIR = _rel_path('..', 'test_data')
-TEST_DATA_BLANK_PROJECT = os.path.join(TEST_DATA_DIR, 'blank_project.ino')
-TEST_DATA_BLANK_PROJECT_ZIP = os.path.join(TEST_DATA_DIR, 'blank_project.zip')
+TEST_DATA_INO = os.path.join(TEST_DATA_DIR, 'upload_ino.ino')
+TEST_DATA_ZIP = os.path.join(TEST_DATA_DIR, 'upload_zip.zip')
 
 # Directory in which the local compile tester files are stored.
 COMPILE_TESTER_DIR = os.path.join(TEST_DATA_DIR, 'cb_compile_tester')
 
+# Credentials to use when logging into the bachelor site
+TEST_CREDENTIALS = {
+    "username": "tester",
+    "password": "testerPASS"
+}
+
+TEST_PROJECT_NAME = "test_project"
+
+TIMEOUT = {
+    'LOCATE_ELEMENT': 30
+}
 
 # Set up Selenium Webdrivers to be used for selenium tests
 def _get_firefox_profile():
@@ -129,15 +150,3 @@ def create_webdriver(command_executor, desired_capabilities):
         desired_capabilities=desired_capabilities,
         browser_profile=browser_profile,
     )
-
-
-# Credentials to use when logging into the bachelor site
-TEST_CREDENTIALS = {
-    "username": "tester",
-    "password": "testerPASS"
-}
-
-TEST_PROJECT_NAME = "test_project"
-
-# How long we wait until giving up on trying to locate an element
-ELEMENT_FIND_TIMEOUT = 10
