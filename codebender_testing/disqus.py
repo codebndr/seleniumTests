@@ -101,16 +101,21 @@ class DisqusWrapper:
                 post_id, existing_message = self.get_posts(page['id'])
                 if post_id and existing_message:
                     boards = []
+                    unsupportedFlag = False
                     for result in results:
                         if result['status'] == 'success':
                             board = result['board']
                             if re.match(r'Arduino Mega.+', board):
                                 board = 'Arduino Mega'
                             boards.append(board)
+                        elif result['status'] == 'unsupported':
+                            unsupportedFlag = True
 
                     new_message = self.messages['example_fail'].replace('TEST_DATE', current_date)
                     if len(boards) > 0:
                         new_message = self.messages['example_success'].replace('TEST_DATE', current_date).replace('BOARDS_LIST', ', '.join(boards))
+                    elif unsupportedFlag:
+                        new_message = self.messages['example_unsupported']
                     log[url]['comment'] = self.update_post(post_id, new_message)
                     break
         else:

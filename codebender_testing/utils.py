@@ -444,8 +444,15 @@ class CodebenderSeleniumBot(object):
             if url_fragments.path in BOARDS_DB['special_boards']:
                 boards = BOARDS_DB['special_boards'][url_fragments.path]
 
-            # Run Verify
-            results = self.compile_sketch(sketch, boards, iframe=iframe)
+            if len(boards) > 0:
+                # Run Verify
+                results = self.compile_sketch(sketch, boards, iframe=iframe)
+            else:
+                results = [
+                    {
+                        'status': 'unsupported'
+                    }
+                ]
 
             # Used when not funning in Full mode
             if logfile is None or not self.run_full_compile_tests:
@@ -473,6 +480,8 @@ class CodebenderSeleniumBot(object):
                         'board': result['board'],
                         'error': result['message']
                     })
+                elif result['status'] == 'unsupported':
+                    log_entry[sketch]['unsupported'] = True
 
             # Update Disqus comments
             if compile_type == 'library' and comment:
