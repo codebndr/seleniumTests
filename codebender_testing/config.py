@@ -53,7 +53,8 @@ _CHROME_EXTENSION_FNAME = 'codebendercc-extension.crx'
 CHROME_EXT_MAX_CHROME_VERSION = 41
 
 # Path to YAML file specifying capability list
-DEFAULT_CAPABILITIES_FILE_PATH = _rel_path('capabilities.yaml')
+DEFAULT_CAPABILITIES_FILE = os.getenv('CAPABILITIES', 'capabilities.yaml')
+DEFAULT_CAPABILITIES_FILE_PATH = _rel_path(DEFAULT_CAPABILITIES_FILE)
 
 # Files used for testing
 TEST_DATA_DIR = _rel_path('..', 'test_data')
