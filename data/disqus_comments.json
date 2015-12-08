@@ -1,0 +1,6 @@
+{
+    "library": "This library and its examples where tested on TEST_DATE with common Arduino boards. For more detailed information about the test results, please look at each example's comments.",
+    "example_success": "This example was tested on TEST_DATE and it compiles on BOARDS_LIST.",
+    "example_fail": "This example was tested on TEST_DATE and it failed to compile on common Arduino boards.",
+    "example_unsupported": "This example is not known to compile with any of the codebender supported boards."
+}

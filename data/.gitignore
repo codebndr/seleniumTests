@@ -1,8 +1,0 @@
-# Ignore everything in this directory
-*
-
-# Except this file
-!.gitignore
-
-# We need this gitignore since the logs directory is required for storing logs,
-# but we don't want to commit the logs themselves.

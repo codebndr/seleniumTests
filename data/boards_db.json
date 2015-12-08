@@ -1,0 +1,9 @@
+{
+    "default_boards": [
+        "Arduino Uno",
+        "Arduino Leonardo",
+        "Arduino Mega 2560 or Mega ADK"
+    ],
+    "special_boards": {
+    }
+}
