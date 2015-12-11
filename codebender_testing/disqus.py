@@ -115,7 +115,7 @@ class DisqusWrapper:
                     if len(boards) > 0:
                         new_message = self.messages['example_success'].replace('TEST_DATE', current_date).replace('BOARDS_LIST', ', '.join(boards))
                     elif unsupportedFlag:
-                        new_message = self.messages['example_unsupported']
+                        new_message = self.messages['example_unsupported'].replace('TEST_DATE', current_date)
                     log[url]['comment'] = self.update_post(post_id, new_message)
                     break
         else:
