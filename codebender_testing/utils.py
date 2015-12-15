@@ -149,6 +149,12 @@ def report_creator(compile_type, log_entry, log_file):
                             diff[url] = {}
                         diff[url][result] = new_log[url][result]
                         changes += 1
+                        continue
+                    if old_log[url][result] != new_log[url][result]:
+                        if not url in diff:
+                            diff[url] = {}
+                        diff[url][result] = new_log[url][result]
+                        changes += 1
     elif len(logs_to_examine) == 1:
         diff = logs_to_examine[0]
         changes += 1
