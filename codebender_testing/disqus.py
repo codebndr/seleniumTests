@@ -89,7 +89,7 @@ class DisqusWrapper:
                         log[url] = {}
                     log[url]['comment'] = self.update_post(post_id, new_message)
         else:
-            log[url][comment] = False
+            log[url]['comment'] = False
         return log
 
     def handle_example_comment(self, url, results, current_date, log):
