@@ -91,10 +91,10 @@ with open(BOARDS_PATH) as f:
 def report_creator(compile_type, log_entry, log_file):
     logs = os.listdir(get_path('logs'))
     logs_re = re.compile(r'.+cb_compile_tester.+')
-    if compile_type == 'libraries':
+    if compile_type == 'library':
         logs_re = re.compile(r'.+libraries_test.+')
 
-    logs = [x for x in logs if x != '.gitignore' and logs_re.match(x)]
+    logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
     tail = logs[-2:]
     logs_to_examine = []
     for log in tail:
