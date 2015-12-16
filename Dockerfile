@@ -1,6 +1,6 @@
 # Dockerfile to build container with Codebender selenium tests.
 
-FROM ubuntu:12.04
+FROM ubuntu:14.04
 # TODO: add MAINTAINER
 
 # Install requirements and their dependencies
