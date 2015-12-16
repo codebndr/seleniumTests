@@ -12,6 +12,7 @@ RUN apt-get install -y \
   python-dev \
   python-setuptools \
   openssl \
+  libssl-dev \
   mailutils \
   ssmtp \
   sharutils
