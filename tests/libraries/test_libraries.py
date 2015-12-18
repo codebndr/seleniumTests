@@ -1,5 +1,4 @@
 from codebender_testing.config import LIBRARIES_TEST_LOGFILE
-from codebender_testing.config import LIVE_SITE_URL
 from codebender_testing.utils import SeleniumTestCase
 
 

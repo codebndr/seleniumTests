@@ -1,4 +1,3 @@
-from codebender_testing.config import TEST_CREDENTIALS
 from codebender_testing.utils import SeleniumTestCase
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By

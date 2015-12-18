@@ -1,15 +1,11 @@
-import os
-
-import pytest
-
-from codebender_testing.config import BASE_URL
 from codebender_testing.config import COMPILE_TESTER_DIR
 from codebender_testing.config import COMPILE_TESTER_LOGFILE
 from codebender_testing.config import COMPILE_TESTER_URL
 from codebender_testing.config import LIVE_SITE_URL
 from codebender_testing.config import SOURCE_BACHELOR
 from codebender_testing.utils import SeleniumTestCase
-from codebender_testing.utils import temp_copy
+import os
+import pytest
 
 
 class TestCompileTester(SeleniumTestCase):
