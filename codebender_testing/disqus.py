@@ -3,7 +3,6 @@
 
 from codebender_testing.config import get_path
 import disqusapi
-import requests
 import simplejson
 import base64
 import hashlib

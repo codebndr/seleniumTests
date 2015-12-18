@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from time import gmtime
 from time import strftime
 from urlparse import urlparse
-import json
 import random
 import os
 import re
