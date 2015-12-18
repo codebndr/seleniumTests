@@ -20,12 +20,9 @@ class TestHome(CodebenderEmbeddedTestCase):
 
     def test_embedded_views(self):
         embed_sketch_re = re.compile('^https:\/\/codebender\.cc\/embed\/sketch:\d+$')
-        example_re = re.compile('^https:\/\/codebender\.cc\/example\/.+$$')
-        serial_monitor_re = re.compile('^https:\/\/codebender\.cc\/embed\/serialmonitor$$')
         for embedded in EMBEDDED_VIEWS:
             self.open(embedded)
             iframes = self.driver.find_elements_by_tag_name('iframe')
-            test_iframes = []
             for iframe in iframes:
                 iframe_src = iframe.get_attribute('src')
                 if embed_sketch_re.match(iframe_src):

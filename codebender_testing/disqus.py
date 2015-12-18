@@ -70,7 +70,7 @@ class DisqusWrapper:
             self.last_library = library
         if library and library != self.last_library and (library not in self.examples_without_library or counter >= total_sketches-1):
             log_entry = self.handle_library_comment(library, current_date, log_entry)
-            last_library = library
+            self.last_library = library
 
         return log_entry
 
@@ -121,7 +121,6 @@ class DisqusWrapper:
         return log
 
     def get_posts(self, thread_id):
-        post_found = False
         post_id = None
         raw_message = None
         paginator = disqusapi.Paginator(self.disqus.api.posts.list, forum=FORUM, thread=thread_id, order='asc', method='GET')

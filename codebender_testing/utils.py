@@ -529,7 +529,7 @@ class CodebenderSeleniumBot(object):
 
     def check_iframe(self):
         """Returns the contents of an iframe [project_name, user_name, sketch_contents]"""
-        self.driver.switch_to_frame(driver.find_element_by_tag_name('iframe'))
+        self.driver.switch_to_frame(self.driver.find_element_by_tag_name('iframe'))
         project_name = self.driver.find_element_by_class_name('projectName').text
         user_name = self.driver.find_element_by_class_name('userName').text
         sketch_contents = self.execute_script('return editor.aceEditor.getValue();', 'editor')
@@ -637,7 +637,7 @@ class CodebenderEmbeddedTestCase(SeleniumTestCase):
 
     def check_element_exists(self, css_path):
         try:
-            element = self.driver.find_element_by_css_selector(css_path)
+            self.driver.find_element_by_css_selector(css_path)
             return True
         except NoSuchElementException:
             return False
