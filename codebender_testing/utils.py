@@ -7,6 +7,7 @@ import time
 import random
 import os
 import re
+import sys
 import shutil
 import tempfile
 import simplejson
@@ -516,6 +517,7 @@ class CodebenderSeleniumBot(object):
             if sketch not in log_entry:
                 log_entry[sketch] = {}
 
+            test_status = '.'
             # Log the compilation results
             openFailFlag = False
             for result in results:
@@ -526,16 +528,20 @@ class CodebenderSeleniumBot(object):
                     log_entry[sketch]['success'].append(result['board'])
                 elif result['status'] == 'fail':
                     log_entry[sketch]['fail'].append(result['board'])
+                    test_status = 'F'
                 elif result['status'] == 'open_fail':
                     log_entry[sketch]['open_fail'] = True
                     openFailFlag = True
+                    test_status = 'O'
                 elif result['status'] == 'error':
                     log_entry[sketch]['error'].append({
                         'board': result['board'],
                         'error': result['message']
                     })
+                    test_status = 'E'
                 elif result['status'] == 'unsupported':
                     log_entry[sketch]['unsupported'] = True
+                    test_status = 'U'
 
             # Update Disqus comments
             if compile_type == 'library' and comment:
@@ -545,7 +551,9 @@ class CodebenderSeleniumBot(object):
             with open(log_file, 'w') as f:
                 f.write(jsondump(log_entry))
 
-            print '.',
+            # Display progress
+            sys.stdout.write(test_status)
+            sys.stdout.flush()
 
             toc = time.time()
             if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
