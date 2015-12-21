@@ -1,12 +1,13 @@
 from contextlib import contextmanager
 from time import gmtime
 from time import strftime
+from time import strptime
 from urlparse import urlparse
+import time
 import random
 import os
 import re
 import shutil
-import time
 import tempfile
 import simplejson
 import pytest
@@ -73,6 +74,10 @@ VERIFY_TIMEOUT = 30
 VERIFICATION_SUCCESSFUL_MESSAGE = "Verification Successful"
 VERIFICATION_FAILED_MESSAGE = "Verification failed."
 
+# Max test runtime into saucelabs
+# 2.5 hours (3 hours max)
+SAUCELABS_TIMEOUT_SECONDS = 10800 - 1800
+
 # Throttle between compiles
 COMPILES_PER_MINUTE = 10
 def throttle_compile():
@@ -84,6 +89,31 @@ BOARDS_FILE = 'boards_db.json'
 BOARDS_PATH = get_path('data', BOARDS_FILE)
 with open(BOARDS_PATH) as f:
     BOARDS_DB = simplejson.loads(f.read())
+
+def read_last_log(compile_type):
+    logs = os.listdir(get_path('logs'))
+    logs_re = re.compile(r'.+cb_compile_tester.+')
+    if compile_type == 'library':
+        logs_re = re.compile(r'.+libraries_test.+')
+    logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
+
+    log_timestamp_re = re.compile(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-.+\.json')
+    log = None
+    timestamp = None
+    if len(logs) > 0:
+        log = logs[-1]
+        timestamp = log_timestamp_re.match(log).group(1)
+
+    last_log = None
+    if log:
+        with open(get_path('logs', log)) as f:
+            last_log = simplejson.loads(f.read())
+
+    return {
+        'log': last_log,
+        'timestamp': timestamp
+    }
+
 
 # Creates a report json after each compile test
 def report_creator(compile_type, log_entry, log_file):
@@ -429,19 +459,39 @@ class CodebenderSeleniumBot(object):
 
         # Log filename
         log_time = gmtime()
+        # Keeps the logs of each compile
+        log_entry = {}
+
+        urls_visited = {}
+        last_log = read_last_log(compile_type)
+        if last_log['log']:
+            # resume previous compile
+            log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
+            log_entry = last_log['log']
+            for url in last_log['log']:
+                urls_visited[url] = True
+
+        urls_to_visit = []
+        for url in sketches:
+            if url not in urls_visited:
+                urls_to_visit.append(url)
+
+        if len(urls_to_visit) == 0:
+            urls_to_visit = sketches
+            log_entry = {}
+            log_time = gmtime()
+
         current_date = strftime('%Y-%m-%d', log_time)
         # Initialize DisqusWrapper
         disqus_wrapper = DisqusWrapper(log_time)
         if logfile:
             log_file = strftime(logfile, log_time)
-        # Keeps the logs of each compile
-        log_entry = {}
-        # Compile all the input when in Full mode or a single sketch/example
-        sketches = sketches if self.run_full_compile_tests else sketches[0:1]
 
-        print '\nCompiling:', len(sketches), 'sketches'
-        total_sketches = len(sketches)
-        for counter, sketch in enumerate(sketches):
+        print '\nCompiling:', len(urls_to_visit), 'sketches'
+        total_sketches = len(urls_to_visit)
+        tic = time.time()
+
+        for counter, sketch in enumerate(urls_to_visit):
             # Read the boards map in case current sketch/example requires a special board configuration
             boards = BOARDS_DB['default_boards']
             url_fragments = urlparse(sketch)
@@ -497,9 +547,16 @@ class CodebenderSeleniumBot(object):
 
             print '.',
 
+            toc = time.time()
+            if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
+                print '\nStopping tests to avoid saucelabs timeout'
+                print 'Test duration:', int(toc - tic), 'sec'
+                return
+
         # Generate a report if requested
         if create_report:
             report_creator(compile_type, log_entry, log_file)
+        print '\nTest duration:', int(toc - tic), 'sec'
 
     def execute_script(self, script, *deps):
         """Waits for all JavaScript variables in `deps` to be defined, then
