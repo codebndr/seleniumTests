@@ -1,0 +1,6 @@
+# Requirements for running batch scripts.
+
+# If lxml fails to install in Ubuntu, install the following dependencies with
+# apt-get: libxml2-dev libxslt1-dev python3-dev
+
+lxml

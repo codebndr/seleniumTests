@@ -1,2 +1,11 @@
-pytest==2.6.4
-selenium==2.44.0
+pyopenssl
+ndg-httpsclient
+pyasn1
+cryptography
+tox
+virtualenv
+pyyaml
+pytest
+selenium
+simplejson
+disqus-python

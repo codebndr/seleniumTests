@@ -1,0 +1,18 @@
+# This file contains a list of capabilities which will be used to instantiate
+# the remote selenium webdrivers.
+# Each list entry will cause the entire test suite to be run for a remote
+# webdriver with the capabilities specified in the entry.
+
+# See here for more on test configuration:
+#   https://docs.saucelabs.com/reference/test-configuration
+
+- browserName: "firefox"
+  version: 42
+  public: "public restricted"
+  seleniumVersion: "2.48.0"
+  maxDuration: 10800
+- browserName: "chrome"
+  version: 41
+  public: "public restricted"
+  seleniumVersion: "2.48.0"
+  maxDuration: 10800

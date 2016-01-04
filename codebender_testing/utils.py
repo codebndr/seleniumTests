@@ -1,35 +1,270 @@
+from contextlib import contextmanager
+from time import gmtime
+from time import strftime
+from time import strptime
+from urlparse import urlparse
+import time
+import random
+import os
 import re
+import sys
+import shutil
+import tempfile
+import simplejson
+import pytest
 
-from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-import pytest
 
 from codebender_testing.config import BASE_URL
-from codebender_testing.config import ELEMENT_FIND_TIMEOUT
+from codebender_testing.config import TIMEOUT
 from codebender_testing.config import TEST_CREDENTIALS
 from codebender_testing.config import TEST_PROJECT_NAME
-from codebender_testing.config import WEBDRIVERS
+from codebender_testing.config import get_path
+from codebender_testing.config import jsondump
+from codebender_testing.disqus import DisqusWrapper
 
 
-class SeleniumTestCase(object):
-    """Base class for all Selenium tests."""
+# Time to wait until we give up on a DOM property becoming available.
+DOM_PROPERTY_DEFINED_TIMEOUT = 30
+
+# JavaScript snippet to extract all the links to sketches on the current page.
+# `selector` is a CSS selector selecting these links.
+_GET_SKETCHES_SCRIPT = "return $('{selector}').map(function() {{ return this.href; }}).toArray();"
+
+def SELECT_BOARD_SCRIPT(board):
+    return """
+    $('#cb_cf_boards').val('{}').trigger('change');
+    """.format(board)
+
+# JavaScript snippet to verify the code on the current page.
+_VERIFY_SCRIPT = """
+compilerflasher.verify();
+"""
+
+_TEST_INPUT_ID = "_cb_test_input"
+
+# Creates an input into which we can upload files using Selenium.
+_CREATE_INPUT_SCRIPT = """
+var input = $('<input id="{input_id}" type="file" style="position: fixed">');
+$('body').append(input);
+""".format(input_id=_TEST_INPUT_ID)
+
+# After the file is chosen via Selenium, this script moves the file object
+# (in the DOM) to the Dropzone.
+def _move_file_to_dropzone_script(dropzone_selector):
+    return """
+    $(function () {{
+        var fileInput = document.getElementById('{input_id}');
+        var file = fileInput.files[0];
+        var dropzone = Dropzone.forElement('{selector}');
+        dropzone.drop({{ dataTransfer: {{ files: [file] }} }});
+      }})
+    """.format(input_id=_TEST_INPUT_ID, selector=dropzone_selector)
+
+# How long (in seconds) to wait before assuming that an example
+# has failed to compile
+VERIFY_TIMEOUT = 30
+
+# Messages displayed to the user after verifying a sketch.
+VERIFICATION_SUCCESSFUL_MESSAGE = "Verification Successful"
+VERIFICATION_FAILED_MESSAGE = "Verification failed."
+
+# Max test runtime into saucelabs
+# 2.5 hours (3 hours max)
+SAUCELABS_TIMEOUT_SECONDS = 10800 - 1800
+
+# Throttle between compiles
+COMPILES_PER_MINUTE = 10
+def throttle_compile():
+    min = 60 / COMPILES_PER_MINUTE
+    max = min + 1
+    time.sleep(random.uniform(min, max))
+
+BOARDS_FILE = 'boards_db.json'
+BOARDS_PATH = get_path('data', BOARDS_FILE)
+with open(BOARDS_PATH) as f:
+    BOARDS_DB = simplejson.loads(f.read())
+
+def read_last_log(compile_type):
+    logs = os.listdir(get_path('logs'))
+    logs_re = re.compile(r'.+cb_compile_tester.+')
+    if compile_type == 'library':
+        logs_re = re.compile(r'.+libraries_test.+')
+    logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
+
+    log_timestamp_re = re.compile(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-.+\.json')
+    log = None
+    timestamp = None
+    if len(logs) > 0:
+        log = logs[-1]
+        timestamp = log_timestamp_re.match(log).group(1)
+
+    last_log = None
+    if log:
+        with open(get_path('logs', log)) as f:
+            last_log = simplejson.loads(f.read())
+
+    return {
+        'log': last_log,
+        'timestamp': timestamp
+    }
+
+
+# Creates a report json after each compile test
+def report_creator(compile_type, log_entry, log_file):
+    logs = os.listdir(get_path('logs'))
+    logs_re = re.compile(r'.+cb_compile_tester.+')
+    if compile_type == 'library':
+        logs_re = re.compile(r'.+libraries_test.+')
+
+    logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
+    tail = logs[-2:]
+    logs_to_examine = []
+    for log in tail:
+        try:
+            with open(get_path('logs', log)) as f:
+                logs_to_examine.append(simplejson.loads(f.read()))
+        except:
+            print 'Log:', log, 'not found'
+
+    diff = {}
+    changes = 0
+    if len(logs_to_examine) >= 2:
+        old_log = logs_to_examine[0]
+        new_log = logs_to_examine[1]
+
+        for url in new_log.keys():
+            if url not in old_log:
+                diff[url] = new_log[url]
+                changes += 1
+                continue
+
+            for result in  new_log[url].keys():
+                if result not in old_log[url]:
+                    if not url in diff:
+                        diff[url] = {}
+                    diff[url][result] = new_log[url][result]
+                    changes += 1
+                    continue
+
+                if result == 'success' or result == 'fail':
+                    if result not in old_log[url]:
+                        if not url in diff:
+                            diff[url] = {}
+                        diff[url][result] = new_log[url][result]
+                        changes += 1
+                        continue
+
+                    for board in new_log[url][result]:
+                        oposite = 'success'
+                        if result == 'success':
+                            oposite = 'fail'
+                        if oposite in old_log[url] and board in old_log[url][oposite]:
+                            if not url in diff:
+                                diff[url] = {}
+                            if result not in diff[url]:
+                                diff[url][result] = []
+                            diff[url][result].append(board)
+                            changes += 1
+                elif result == 'open_fail' or result == 'error' or result == 'comment':
+                    if result not in old_log[url]:
+                        if not url in diff:
+                            diff[url] = {}
+                        diff[url][result] = new_log[url][result]
+                        changes += 1
+                        continue
+                    if old_log[url][result] != new_log[url][result]:
+                        if not url in diff:
+                            diff[url] = {}
+                        diff[url][result] = new_log[url][result]
+                        changes += 1
+    elif len(logs_to_examine) == 1:
+        diff = logs_to_examine[0]
+        changes += 1
+    else:
+        diff = log_entry
+        changes += 1
+
+    filename_tokens = os.path.basename(log_file).split('.')
+    filename = '.'.join(filename_tokens[0:-1])
+    extension = filename_tokens[-1]
+    filename = 'report_' + filename + '_' + str(changes) + '.' + extension
+    path = get_path('reports', filename)
+    with open(path, 'w') as f:
+        f.write(jsondump(diff))
+
+
+@contextmanager
+def temp_copy(fname):
+    """Creates a temporary copy of the file `fname`.
+    This is useful for testing features that derive certain properties
+    from the filename, and we want a unique filename each time we run the
+    test (in case, for example, there is leftover garbage from previous
+    tests with the same name).
+    """
+    extension = fname.split('.')[-1]
+    with tempfile.NamedTemporaryFile(mode='w+b', suffix='.%s' % extension) as copy:
+        with open(fname, 'rb') as original:
+            shutil.copyfileobj(original, copy)
+        copy.flush()
+        yield copy
+
+
+class CodebenderSeleniumBot(object):
+    """Contains various utilities for navigating the Codebender website."""
+
+    # This can be configured on a per-test case basis to use a different
+    # URL for testing; e.g., http://localhost, or http://codebender.cc.
+    # It is set via command line option in _testcase_attrs (below)
+    site_url = None
+
+    def init(self, url=None, webdriver=None):
+        """Create a bot with the given selenium webdriver, operating on `url`.
+        We can't do this in an __init__ method, otherwise py.test complains,
+        presumably because it does something special with __init__ for test
+        cases.
+        """
+        self.driver = webdriver
+
+        if url is None:
+            url = BASE_URL
+        self.site_url = url
 
     @classmethod
-    @pytest.fixture(scope="class", autouse=True)
-    def _testcase_attrs(cls, webdriver):
-        """Sets up any class attributes to be used by any SeleniumTestCase.
-        Here, we just store fixtures as class attributes. This allows us to avoid
-        the pytest boilerplate of getting a fixture value, and instead just
-        refer to the fixture as `self.<fixture>`.
-        """
-        cls.driver = webdriver
+    @contextmanager
+    def session(cls, **kwargs):
+        """Start a new session with a new webdriver. Regardless of whether an
+        exception is raised, the webdriver is guaranteed to quit.
+        The keyword arguments should be interpreted as in `start`.
 
-    @pytest.fixture(scope="class")
-    def tester_login(self): 
-        self.login()
+        Sample usage:
+
+        ```
+        with CodebenderSeleniumBot.session(url="localhost",
+                                           webdriver="firefox") as bot:
+            # The browser is now open
+            bot.open("/")
+            assert "Codebender" in bot.driver.title
+        # The browser is now closed
+        ```
+
+        Test cases shouldn't need to use this method; it's mostly useful for
+        scripts, automation, etc.
+        """
+        try:
+            bot = cls()
+            bot.start(**kwargs)
+            yield bot
+            bot.driver.quit()
+        except:
+            bot.driver.quit()
+            raise
 
     def open(self, url=None):
         """Open the resource specified by `url`.
@@ -39,12 +274,12 @@ class SeleniumTestCase(object):
         """
         if url is None:
             url = ''
-        if re.match(".+?://^", url):
+        if re.match(".+?://", url):
             # url specifies an absolute path.
             return self.driver.get(url)
         else:
             url = url.lstrip('/')
-            return self.driver.get("%s/%s" % (BASE_URL, url))
+            return self.driver.get("%s/%s" % (self.site_url, url))
 
     def open_project(self, project_name=None):
         """Opens the project specified by `name`, bringing the driver to the
@@ -56,27 +291,456 @@ class SeleniumTestCase(object):
         project_link = self.driver.find_element_by_link_text(project_name)
         project_link.send_keys(Keys.ENTER)
 
-    def login(self):
-        """Performs a login."""
+    def login(self, credentials=None):
+        """Performs a login. Note that the current URL may change to an
+        unspecified location when calling this function.
+        `credentials` should be a dict with keys 'username' and 'password',
+        mapped to the appropriate values."""
+        if credentials is None:
+            credentials = TEST_CREDENTIALS
         try:
             self.open()
             login_button = self.driver.find_element_by_id('login_btn')
             login_button.send_keys(Keys.ENTER)
             # Enter credentials and log in
             user_field = self.driver.find_element_by_id('username')
-            user_field.send_keys(TEST_CREDENTIALS['username'])
+            user_field.send_keys(credentials['username'])
             pass_field = self.driver.find_element_by_id('password')
-            pass_field.send_keys(TEST_CREDENTIALS['password'])
+            pass_field.send_keys(credentials['password'])
             do_login = self.driver.find_element_by_id('_submit')
             do_login.send_keys(Keys.ENTER)
         except NoSuchElementException:
             # 'Log In' is not displayed, so we're already logged in.
             pass
 
+    def logout(self):
+        """Logs out of the site."""
+        try:
+            logout_button = self.driver.find_element_by_id("logout")
+            logout_button.send_keys(Keys.ENTER)
+        except NoSuchElementException:
+            # 'Log out' is not displayed, so we're already logged out.
+            pass
+
     def get_element(self, *locator):
         """Waits for an element specified by *locator (a tuple of
         (By.<something>, str)), then returns it if it is found."""
-        WebDriverWait(self.driver, ELEMENT_FIND_TIMEOUT).until(
-            expected_conditions.presence_of_element_located(locator))
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_element_located(locator))
         return self.driver.find_element(*locator)
-        
+
+    def get_elements(self, *locator):
+        """Like `get_element`, but returns a list of all elements matching
+        the selector."""
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_all_elements_located_by(locator))
+        return self.driver.find_elements(*locator)
+
+    def find(self, selector):
+        """Alias for `self.get_element(By.CSS_SELECTOR, selector)`."""
+        return self.get_element(By.CSS_SELECTOR, selector)
+
+    def find_all(self, selector):
+        """Alias for `self.get_elements(By.CSS_SELECTOR, selector)`."""
+        return self.get_elements(By.CSS_SELECTOR, selector)
+
+    def dropzone_upload(self, selector, fname):
+        """Uploads a file specified by `fname` via the Dropzone within the
+        element specified by `selector`. (Dropzone refers to Dropzone.js)
+        """
+        # Create an artificial file input.
+        self.execute_script(_CREATE_INPUT_SCRIPT, '$')
+        test_input = self.get_element(By.ID, _TEST_INPUT_ID)
+        test_input.send_keys(fname)
+        self.execute_script(_move_file_to_dropzone_script(selector), '$', 'Dropzone')
+
+    def upload_project(self, dropzone_selector, test_fname, sketch_name=None):
+        """Tests that we can successfully upload `test_fname`.
+        `project_name` is the expected name of the project; by
+        default it is inferred from the file name.
+        Returns a pair of (the name of the project, the url of the project sketch)
+        """
+        # A tempfile is used here since we want the name to be
+        # unique; if the file has already been successfully uploaded
+        # then the test might give a false-positive.
+        with temp_copy(test_fname) as test_file:
+            self.dropzone_upload(dropzone_selector, test_file.name)
+
+            if sketch_name:
+                return sketch_name
+            return '.'.join(os.path.basename(test_file.name).split('.')[0:-1])
+
+    def delete_project(self, project_name):
+        """Deletes the project specified by `project_name`. Note that this will
+        navigate to the user's homepage."""
+        self.open('/')
+        try:
+            created_project = self.get_element(By.LINK_TEXT, project_name)
+            delete_button_li = created_project.find_element_by_xpath('..')
+            delete_button = delete_button_li.find_element_by_css_selector('.delete-sketch')
+            delete_button.click()
+            popup_delete_button = self.get_element(By.ID, 'deleteProjectButton')
+            popup_delete_button.click()
+        except:
+            pass
+
+    def compile_sketch(self, url, boards, iframe=False):
+        """Compiles the sketch located at `url`, or an iframe within the page
+        referred to by `url`.  Raises an exception if it does not compile.
+        """
+        self.open(url)
+        # When example does not load
+        if 'Sorry! The example could not be fetched.' in self.driver.page_source:
+            compilation_results = []
+            result = {}
+            result['status'] = 'open_fail'
+            compilation_results.append(result)
+            return compilation_results
+        # Switch into iframe if needed
+        if iframe:
+            self.switch_into_iframe(url)
+        # Compile the target for each provided board
+        compilation_results = []
+        for board in boards:
+            result = {
+                'board': board
+            }
+            try:
+                self.execute_script(SELECT_BOARD_SCRIPT(board), '$', 'compilerflasher.pluginHandler.plugin_found')
+                self.execute_script(_VERIFY_SCRIPT, 'compilerflasher')
+                # In the BACHELOR site the id is 'operation_output', but in the live
+                # site the id is 'cb_cf_operation_output'. The [id$=operation_output]
+                # here selects an id that _ends_ with 'operation_output'.
+                compile_result = WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+                    any_text_to_be_present_in_element(
+                        (By.CSS_SELECTOR, "[id$=operation_output]"),
+                        VERIFICATION_SUCCESSFUL_MESSAGE, VERIFICATION_FAILED_MESSAGE
+                    )
+                )
+            except WebDriverException as error:
+                compile_result = "%s; %s" % (type(error).__name__, str(error))
+                result['status'] = 'error'
+                result['message'] = compile_result
+
+            if compile_result == VERIFICATION_SUCCESSFUL_MESSAGE:
+                result['status'] = 'success'
+            else:
+                result['status'] = 'fail'
+
+            compilation_results.append(result)
+
+            throttle_compile()
+
+        self.driver.switch_to_default_content()
+
+        return compilation_results
+
+    def compile_all_sketches(self, url, selector, **kwargs):
+        """Compiles all sketches on the page at `url`. `selector` is a CSS selector
+        that should select all relevant <a> tags containing links to sketches.
+        See `compile_sketches` for the possible keyword arguments that can be specified.
+        """
+        self.open(url)
+        sketches = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector=selector), '$')
+        assert len(sketches) > 0
+        self.compile_sketches(sketches, **kwargs)
+
+    def compile_sketches(self, sketches, iframe=False, logfile=None, compile_type='sketch', create_report=False, comment=False):
+        """Compiles the sketches with URLs given by the `sketches` list.
+        `logfile` specifies a path to a file to which test results will be
+        logged. If it is not `None`, compile errors will not cause the test
+        to halt, but rather be logged to the given file. `logfile` may be a time
+        format string, which will be formatted appropriately.
+        `iframe` specifies whether the urls pointed to by `selector` are contained
+        within an iframe.
+        If the `--full` argument is provided (and hence
+        `self.run_full_compile_tests` is `True`, we do not log, and limit the
+        number of sketches compiled to 1.
+        """
+
+        # Log filename
+        log_time = gmtime()
+        # Keeps the logs of each compile
+        log_entry = {}
+
+        urls_visited = {}
+        last_log = read_last_log(compile_type)
+        if last_log['log']:
+            # resume previous compile
+            log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
+            log_entry = last_log['log']
+            for url in last_log['log']:
+                urls_visited[url] = True
+
+        urls_to_visit = []
+        for url in sketches:
+            if url not in urls_visited:
+                urls_to_visit.append(url)
+
+        if len(urls_to_visit) == 0:
+            urls_to_visit = sketches
+            log_entry = {}
+            log_time = gmtime()
+
+        current_date = strftime('%Y-%m-%d', log_time)
+        # Initialize DisqusWrapper
+        disqus_wrapper = DisqusWrapper(log_time)
+        if logfile:
+            log_file = strftime(logfile, log_time)
+
+        print '\nCompiling:', len(urls_to_visit), 'sketches'
+        total_sketches = len(urls_to_visit)
+        tic = time.time()
+
+        for counter, sketch in enumerate(urls_to_visit):
+            # Read the boards map in case current sketch/example requires a special board configuration
+            boards = BOARDS_DB['default_boards']
+            url_fragments = urlparse(sketch)
+            if url_fragments.path in BOARDS_DB['special_boards']:
+                boards = BOARDS_DB['special_boards'][url_fragments.path]
+
+            if len(boards) > 0:
+                # Run Verify
+                results = self.compile_sketch(sketch, boards, iframe=iframe)
+            else:
+                results = [
+                    {
+                        'status': 'unsupported'
+                    }
+                ]
+
+            # Used when not funning in Full mode
+            if logfile is None or not self.run_full_compile_tests:
+                continue
+
+            # Register current URL into log
+            if sketch not in log_entry:
+                log_entry[sketch] = {}
+
+            test_status = '.'
+            # Log the compilation results
+            openFailFlag = False
+            for result in results:
+                if result['status'] in ['success', 'fail', 'error'] and result['status'] not in log_entry[sketch]:
+                    log_entry[sketch][result['status']] = []
+
+                if result['status'] == 'success':
+                    log_entry[sketch]['success'].append(result['board'])
+                elif result['status'] == 'fail':
+                    log_entry[sketch]['fail'].append(result['board'])
+                    test_status = 'F'
+                elif result['status'] == 'open_fail':
+                    log_entry[sketch]['open_fail'] = True
+                    openFailFlag = True
+                    test_status = 'O'
+                elif result['status'] == 'error':
+                    log_entry[sketch]['error'].append({
+                        'board': result['board'],
+                        'error': result['message']
+                    })
+                    test_status = 'E'
+                elif result['status'] == 'unsupported':
+                    log_entry[sketch]['unsupported'] = True
+                    test_status = 'U'
+
+            # Update Disqus comments
+            if compile_type == 'library' and comment:
+                log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, counter, total_sketches)
+
+            # Dump the test results to `logfile`.
+            with open(log_file, 'w') as f:
+                f.write(jsondump(log_entry))
+
+            # Display progress
+            sys.stdout.write(test_status)
+            sys.stdout.flush()
+
+            toc = time.time()
+            if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
+                print '\nStopping tests to avoid saucelabs timeout'
+                print 'Test duration:', int(toc - tic), 'sec'
+                return
+
+        # Generate a report if requested
+        if create_report:
+            report_creator(compile_type, log_entry, log_file)
+        print '\nTest duration:', int(toc - tic), 'sec'
+
+    def execute_script(self, script, *deps):
+        """Waits for all JavaScript variables in `deps` to be defined, then
+        executes the given script."""
+        if len(deps) > 0:
+            WebDriverWait(self.driver, DOM_PROPERTY_DEFINED_TIMEOUT).until(
+                dom_properties_defined(*deps)
+            )
+        return self.driver.execute_script(script)
+
+    def create_sketch(self, name):
+        """Creates a sketch with a given name"""
+        createSketchBtn = self.driver.find_element_by_id('create_sketch_btn')
+        createSketchBtn.click()
+        sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
+        sketchHeading.click()
+        renameInput = '#editor_heading_project_name input'
+        headingInput = self.get_element(By.CSS_SELECTOR, renameInput)
+        headingInput.clear()
+        headingInput.send_keys(name)
+        headingInput.send_keys(Keys.ENTER)
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.CSS_SELECTOR, "#editor_heading_project_name i")
+            )
+        )
+
+    def check_iframe(self):
+        """Returns the contents of an iframe [project_name, user_name, sketch_contents]"""
+        self.driver.switch_to_frame(self.driver.find_element_by_tag_name('iframe'))
+        project_name = self.driver.find_element_by_class_name('projectName').text
+        user_name = self.driver.find_element_by_class_name('userName').text
+        sketch_contents = self.execute_script('return editor.aceEditor.getValue();', 'editor')
+        self.driver.switch_to_default_content()
+        return [project_name, user_name, sketch_contents]
+
+    def switch_into_iframe(self, url):
+        if 'embed' not in url:
+            url = url.replace('https://codebender.cc/', 'https://codebender.cc/embed/')
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.visibility_of(
+                self.get_element(By.CSS_SELECTOR, 'iframe[src="' + url + '"]')
+            )
+        )
+        script = """
+        var iframes = document.body.getElementsByTagName('iframe');
+        var iframe_index = 0;
+        for (var i=0; i<iframes.length; i++) {{
+            var iframeSrc = iframes[i].getAttribute('src');
+            if (iframeSrc && iframeSrc.indexOf('{url}') > -1) {{
+                iframe_index = i;
+            }}
+        }}
+        return iframe_index;
+        """.format(url=url)
+        index = self.execute_script(script)
+        iframe = self.driver.find_elements_by_tag_name('iframe')[index]
+        self.driver.switch_to_frame(iframe)
+
+
+class SeleniumTestCase(CodebenderSeleniumBot):
+    """Base class for all Selenium tests."""
+
+    @classmethod
+    @pytest.fixture(scope="class", autouse=True)
+    def _testcase_attrs(cls, webdriver, testing_url, testing_full):
+        """Sets up any class attributes to be used by any SeleniumTestCase.
+        Here, we just store fixtures as class attributes. This allows us to avoid
+        the pytest boilerplate of getting a fixture value, and instead just
+        refer to the fixture as `self.<fixture>`.
+        """
+        cls.driver = webdriver
+        cls.site_url = testing_url
+        cls.run_full_compile_tests = testing_full
+
+    @pytest.fixture(scope="class")
+    def tester_login(self, testing_credentials):
+        """A fixture to perform a login with the credentials provided by the
+        `testing_credentials` fixture.
+        """
+        self.login(credentials=testing_credentials)
+
+    @pytest.fixture(scope="class")
+    def tester_logout(self):
+        """A fixture to guarantee that we are logged out before running a test."""
+        self.logout()
+
+class CodebenderEmbeddedTestCase(SeleniumTestCase):
+    """base class for testing embedded views"""
+
+    @pytest.fixture(scope="class")
+    def test_embedded_sketch(self, selector):
+        self.switch_into_iframe(selector)
+
+        project_name = self.driver.find_element_by_class_name('projectName').text
+        assert len(project_name) > 0
+
+        user_name = self.driver.find_element_by_class_name('userName').text
+        assert len(user_name) > 0
+
+        edit_button = self.driver.find_element_by_id('edit-button').text
+        assert edit_button == 'Edit'
+
+        clone_link = self.driver.find_element_by_class_name('clone-link').text
+        assert clone_link == 'Clone & Edit'
+
+        download_link = self.driver.find_element_by_class_name('download-link').text
+        assert download_link == 'Download'
+
+        editor_contents = self.execute_script('return editor.aceEditor.getValue();', 'editor')
+        assert len(editor_contents) > 0
+
+        assert self.check_element_exists('#cb_cf_flash_btn') == True
+        assert self.check_element_exists('#cb_cf_boards') == True
+        assert self.check_element_exists('#cb_cf_ports') == True
+
+        boards_list = self.driver.find_element_by_id('cb_cf_boards').text
+        assert len(boards_list) > 0
+
+        self.driver.switch_to_default_content()
+
+    @pytest.fixture(scope="class")
+    def test_serial_monitor(self, selector):
+        self.switch_into_iframe(selector)
+
+        title = self.driver.find_element_by_css_selector('.well > h4').text.strip()
+        assert title == 'Serial Monitor:'
+
+        ports_label = self.driver.find_element_by_css_selector('.well > span').text.strip()
+        assert ports_label == 'Port:'
+
+        assert self.check_element_exists('#cb_cf_ports') == True
+        assert self.check_element_exists('#cb_cf_baud_rates') == True
+        assert self.check_element_exists('#cb_cf_serial_monitor_connect') == True
+
+    def check_element_exists(self, css_path):
+        try:
+            self.driver.find_element_by_css_selector(css_path)
+            return True
+        except NoSuchElementException:
+            return False
+
+class VerificationError(Exception):
+    """An exception representing a failed verification of a sketch."""
+    pass
+
+
+class dom_properties_defined(object):
+    """An expectation for the given DOM properties to be defined.
+    See selenium.webdriver.support.expected_conditions for more on how this
+    type of class works.
+    """
+
+    def __init__(self, *properties):
+        self._properties = properties
+
+    def __call__(self, driver):
+        return all(
+            driver.execute_script("return window.%s !== undefined" % prop)
+            for prop in self._properties)
+
+
+class any_text_to_be_present_in_element(object):
+    """An expectation for checking if any of the given strings are present in
+    the specified element. Returns the string that was present.
+    """
+    def __init__(self, locator, *texts):
+        self.locator = locator
+        self.texts = texts
+
+    def __call__(self, driver):
+        try :
+            element_text = expected_conditions._find_element(driver, self.locator).text
+            for text in self.texts:
+                if text in element_text:
+                    return text
+            return False
+        except StaleElementReferenceException:
+            return False
