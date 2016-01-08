@@ -96,6 +96,9 @@ def read_last_log(compile_type):
     logs_re = re.compile(r'.+cb_compile_tester.+')
     if compile_type == 'library':
         logs_re = re.compile(r'.+libraries_test.+')
+    elif compile_type == 'fetch':
+        logs_re = re.compile(r'.+libraries_fetch.+')
+
     logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
 
     log_timestamp_re = re.compile(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-.+\.json')
@@ -122,6 +125,8 @@ def report_creator(compile_type, log_entry, log_file):
     logs_re = re.compile(r'.+cb_compile_tester.+')
     if compile_type == 'library':
         logs_re = re.compile(r'.+libraries_test.+')
+    elif compile_type == 'fetch':
+        logs_re = re.compile(r'.+libraries_fetch.+')
 
     logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
     tail = logs[-2:]
@@ -143,6 +148,12 @@ def report_creator(compile_type, log_entry, log_file):
             if url not in old_log:
                 diff[url] = new_log[url]
                 changes += 1
+                continue
+
+            if compile_type == 'fetch':
+                if old_log[url] != new_log[url]:
+                    diff[url] = new_log[url]
+                    changes += 1
                 continue
 
             for result in  new_log[url].keys():
@@ -383,6 +394,71 @@ class CodebenderSeleniumBot(object):
             popup_delete_button.click()
         except:
             pass
+
+    def open_all_libraries_and_examples(self, url, logfile):
+        self.open(url)
+        examples = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector='.accordion li a'), '$')
+        assert len(examples) > 0
+        libraries = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector='.library_link'), '$')
+        assert len(libraries) > 0
+        examples_libraries = examples + libraries
+
+        log_time = gmtime()
+        log_file = strftime(logfile, log_time)
+        log_entry = {}
+
+        urls_visited = {}
+        last_log = read_last_log('fetch')
+        if last_log['log']:
+            # resume previous compile
+            log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
+            log_file = strftime(logfile, log_time)
+            log_entry = last_log['log']
+            for url in last_log['log']:
+                urls_visited[url] = True
+
+        urls_to_visit = []
+        for url in examples_libraries:
+            if url not in urls_visited:
+                urls_to_visit.append(url)
+
+        if len(urls_to_visit) == 0:
+            urls_to_visit = examples_libraries
+            log_entry = {}
+            log_time = gmtime()
+            log_file = strftime(logfile, log_time)
+
+        library_re = re.compile(r'^https://codebender.cc/library/.+$')
+        example_re = re.compile(r'^https://codebender.cc/example/.+/.+$')
+
+        print '\nVisiting:', len(urls_to_visit), 'URLs'
+        tic = time.time()
+        for url in urls_to_visit:
+            self.open(url)
+            test_status = True
+            if library_re.match(url) and self.driver.current_url == 'https://codebender.cc/libraries':
+                test_status = False
+            elif example_re.match(url) and 'Sorry! The example could not be fetched.' in self.driver.page_source:
+                test_status = False
+            log_entry[url] = test_status
+
+            progress = '.'
+            if not test_status:
+                progress = 'F'
+
+            sys.stdout.write(progress)
+            sys.stdout.flush()
+
+            with open(log_file, 'w', 0) as f:
+                f.write(jsondump(log_entry))
+
+            toc = time.time()
+            if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
+                print '\nStopping tests to avoid saucelabs timeout'
+                print 'Test duration:', int(toc - tic), 'sec'
+                return
+
+        report_creator('fetch', log_entry, log_file)
 
     def compile_sketch(self, url, boards, iframe=False):
         """Compiles the sketch located at `url`, or an iframe within the page

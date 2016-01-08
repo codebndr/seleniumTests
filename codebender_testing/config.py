@@ -44,6 +44,9 @@ COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
 # Logfile for /libraries compilation results
 LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
 
+# Logfile for /libraries fetch results
+LIBRARIES_FETCH_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_fetch")
+
 _EXTENSIONS_DIR = _rel_path('..', 'extensions')
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
 _CHROME_EXTENSION_FNAME = 'codebendercc-extension.crx'
