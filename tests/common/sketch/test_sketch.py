@@ -109,7 +109,7 @@ class TestSketch(SeleniumTestCase):
         field """
         self.open_project()
 
-        add_button = self.get_element(By.CLASS_NAME, 'add-file-button')
+        add_button = self.get_element(By.ID, 'newfile')
         add_button.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.visibility_of(
