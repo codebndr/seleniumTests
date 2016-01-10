@@ -75,6 +75,7 @@ class TestSketch(SeleniumTestCase):
     @pytest.mark.requires_extension
     def test_speeds_dropdown(self):
         """Tests that the speeds dropdown exists."""
+        self.get_element(By.ID, "serial_monitor_toggle").click()
         self.get_element(By.ID, "cb_cf_baud_rates")
 
     @pytest.mark.requires_extension
