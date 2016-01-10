@@ -664,7 +664,12 @@ class CodebenderSeleniumBot(object):
         headingInput.send_keys(Keys.ENTER)
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.invisibility_of_element_located(
-                (By.CSS_SELECTOR, "#editor_heading_project_name i")
+                (By.CSS_SELECTOR, "#editor_heading_project_working")
+            )
+        )
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.text_to_be_present_in_element(
+                (By.ID, "operation_output"), 'Name successfully changed!'
             )
         )
 
