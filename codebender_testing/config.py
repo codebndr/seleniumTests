@@ -44,6 +44,9 @@ COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
 # Logfile for /libraries compilation results
 LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
 
+# Logfile for /libraries fetch results
+LIBRARIES_FETCH_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_fetch")
+
 _EXTENSIONS_DIR = _rel_path('..', 'extensions')
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
 _CHROME_EXTENSION_FNAME = 'codebendercc-extension.crx'
@@ -75,6 +78,8 @@ TEST_PROJECT_NAME = "test_project"
 TIMEOUT = {
     'LOCATE_ELEMENT': 30
 }
+
+TESTS_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
 
 # Set up Selenium Webdrivers to be used for selenium tests
 def _get_firefox_profile():
@@ -144,6 +149,8 @@ def create_webdriver(command_executor, desired_capabilities):
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
         desired_capabilities.update(_capabilities)
         browser_profile = _get_firefox_profile()
+        browser_profile.set_preference("general.useragent.override", TESTS_USER_AGENT)
+        desired_capabilities["firefox_profile"] = browser_profile.update_preferences()
     else:
         raise ValueError("Invalid webdriver %s (only chrome and firefox are supported)" % browser_name)
     return webdriver.Remote(
