@@ -77,46 +77,54 @@ class DisqusWrapper:
     def handle_library_comment(self, library, current_date, log):
         url = '/library/' + library
         identifier = 'ident:' + url
-        paginator = disqusapi.Paginator(self.disqus.api.threads.list, forum=FORUM, thread=identifier, method='GET')
-        if paginator:
-            for page in paginator:
-                post_id, existing_message = self.get_posts(page['id'])
-                if post_id and existing_message:
-                    new_message = self.messages['library'].replace('TEST_DATE', current_date)
-                    if url not in log:
-                        log[url] = {}
-                    log[url]['comment'] = self.update_post(post_id, new_message)
-        else:
+        try:
+            paginator = disqusapi.Paginator(self.disqus.api.threads.list, forum=FORUM, thread=identifier, method='GET')
+            if paginator:
+                for page in paginator:
+                        post_id, existing_message = self.get_posts(page['id'])
+                        if post_id and existing_message:
+                            new_message = self.messages['library'].replace('TEST_DATE', current_date)
+                            if url not in log:
+                                log[url] = {}
+                            log[url]['comment'] = self.update_post(post_id, new_message)
+            else:
+                log[url]['comment'] = False
+        except Exception as error:
+            print 'Error:', error
             log[url]['comment'] = False
         return log
 
     def handle_example_comment(self, url, results, current_date, log):
         identifier = url.replace('https://codebender.cc', '')
         identifier = 'ident:' + identifier
-        paginator = disqusapi.Paginator(self.disqus.api.threads.list, forum=FORUM, thread=identifier, method='GET')
-        if paginator:
-            for page in paginator:
-                post_id, existing_message = self.get_posts(page['id'])
-                if post_id and existing_message:
-                    boards = []
-                    unsupportedFlag = False
-                    for result in results:
-                        if result['status'] == 'success':
-                            board = result['board']
-                            if re.match(r'Arduino Mega.+', board):
-                                board = 'Arduino Mega'
-                            boards.append(board)
-                        elif result['status'] == 'unsupported':
-                            unsupportedFlag = True
+        try:
+            paginator = disqusapi.Paginator(self.disqus.api.threads.list, forum=FORUM, thread=identifier, method='GET')
+            if paginator:
+                for page in paginator:
+                        post_id, existing_message = self.get_posts(page['id'])
+                        if post_id and existing_message:
+                            boards = []
+                            unsupportedFlag = False
+                            for result in results:
+                                if result['status'] == 'success':
+                                    board = result['board']
+                                    if re.match(r'Arduino Mega.+', board):
+                                        board = 'Arduino Mega'
+                                    boards.append(board)
+                                elif result['status'] == 'unsupported':
+                                    unsupportedFlag = True
 
-                    new_message = self.messages['example_fail'].replace('TEST_DATE', current_date)
-                    if len(boards) > 0:
-                        new_message = self.messages['example_success'].replace('TEST_DATE', current_date).replace('BOARDS_LIST', ', '.join(boards))
-                    elif unsupportedFlag:
-                        new_message = self.messages['example_unsupported'].replace('TEST_DATE', current_date)
-                    log[url]['comment'] = self.update_post(post_id, new_message)
-                    break
-        else:
+                            new_message = self.messages['example_fail'].replace('TEST_DATE', current_date)
+                            if len(boards) > 0:
+                                new_message = self.messages['example_success'].replace('TEST_DATE', current_date).replace('BOARDS_LIST', ', '.join(boards))
+                            elif unsupportedFlag:
+                                new_message = self.messages['example_unsupported'].replace('TEST_DATE', current_date)
+                            log[url]['comment'] = self.update_post(post_id, new_message)
+                            break
+            else:
+                log[url]['comment'] = False
+        except Exception as error:
+            print 'Error:', error
             log[url]['comment'] = False
         return log
 
