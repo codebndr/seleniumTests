@@ -79,7 +79,7 @@ TIMEOUT = {
     'LOCATE_ELEMENT': 30
 }
 
-TESTS_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+SELENIUM_USER_AGENT = os.getenv('SELENIUM_USER_AGENT', None)
 
 # Set up Selenium Webdrivers to be used for selenium tests
 def _get_firefox_profile():
@@ -149,7 +149,8 @@ def create_webdriver(command_executor, desired_capabilities):
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
         desired_capabilities.update(_capabilities)
         browser_profile = _get_firefox_profile()
-        browser_profile.set_preference("general.useragent.override", TESTS_USER_AGENT)
+        if SELENIUM_USER_AGENT:
+            browser_profile.set_preference("general.useragent.override", SELENIUM_USER_AGENT)
         desired_capabilities["firefox_profile"] = browser_profile.update_preferences()
     else:
         raise ValueError("Invalid webdriver %s (only chrome and firefox are supported)" % browser_name)
