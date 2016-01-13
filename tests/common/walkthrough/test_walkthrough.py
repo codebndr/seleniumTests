@@ -1,11 +1,15 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 import pytest
+import os
 
+from codebender_testing.config import SELENIUM_USER_AGENT
 from codebender_testing.utils import SeleniumTestCase
 from codebender_testing.utils import SELECT_BOARD_SCRIPT
 
+
 TEST_BOARD = 'Arduino Fio'
+
 
 class TestUserHome(SeleniumTestCase):
 
@@ -26,7 +30,15 @@ class TestUserHome(SeleniumTestCase):
 
     def test_page_3(self):
         """Test page 3"""
-        self.get_element(By.CSS_SELECTOR, '#linux-directions .btn:nth-child(2)').click()
+        if 'Linux' in SELENIUM_USER_AGENT:
+            self.get_element(By.CSS_SELECTOR, '#linux-directions .btn:nth-child(2)').click()
+            self.driver.back()
+        elif 'Windows' in SELENIUM_USER_AGENT:
+            self.get_element(By.CSS_SELECTOR, '#windows-directions .btn:nth-child(2)').click()
+            self.driver.back()
+        elif 'Mac' in SELENIUM_USER_AGENT:
+            self.get_element(By.CSS_SELECTOR, '#mac-directions .btn:nth-child(2)').click()
+            self.driver.back()
 
     def test_page_4(self):
         """Test page 4"""
