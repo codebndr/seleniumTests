@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 SAUCELABS_USER=""
 SAUCELABS_KEY=""
