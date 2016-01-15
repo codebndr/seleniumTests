@@ -1,0 +1,84 @@
+#!/bin/bash
+
+export CAPABILITIES='capabilities_firefox.yaml'
+
+source ./env_vars.sh
+
+ROOTDIR="/path/to/seleniumTests"
+
+if [ $# -lt 1 ]; then
+    echo "Please provide an argument or run -h(--help) option"
+    exit 1
+fi
+
+app_name="$0"
+common=0
+libraries=0
+examples=0
+sketches=0
+
+while true; do
+    case "$1" in
+        -h|help)
+            echo -e "usage: ${app_name} [option(s)]\n\n" "Options:\n" \
+                " common - Runs common tests against a specified website\n"  \
+                " libraries - Visits all the libraries and examples at libraries view\n"  \
+                " examples - Compiles all the examples at libraries view\n"   \
+                " sketches - Compiles the examples of user cb_compile_tester\n"    \
+                " help - Display this help and exit"
+            exit 0
+            ;;
+        common) common=1
+            ;;
+        libraries) libraries=1
+            ;;
+        examples) examples=1
+            ;;
+        sketches) sketches=1
+            ;;
+        -*) echo -e "error: unknown argument: ${1}.\nRun ${app_name} -h."
+            exit 1
+            ;;
+        *) break
+            ;;
+    esac
+    shift
+done
+
+cd ..
+
+URL="https://codebender.cc"
+SOURCE="codebender_cc"
+
+email_date=$(date +"%Y-%m-%d %H:%M:%S")
+
+if [ "${common}" -eq 1 ]; then
+    IDENTIFIER="common"
+    tox tests/common -- --url=${URL} --source=${SOURCE}
+    RETVAL=$?
+    if [ "${RETVAL}" -eq 1 ]; then
+        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with common tests. Please check the logs.'
+        exit ${RETVAL}
+    fi
+elif [ "${examples}" -eq 1 ]; then
+    IDENTIFIER="libraries_test"
+    tox tests/libraries -- --url=${URL} --source=${SOURCE} -F
+elif [ "${libraries}" -eq 1 ]; then
+    IDENTIFIER="libraries_fetch"
+    tox tests/libraries_fetch -- --url=${URL} --source=${SOURCE} -F
+elif [ "${sketches}" -eq 1 ]; then
+    IDENTIFIER="cb_compile_tester"
+    tox tests/compile_tester -- --url=${URL} --source=${SOURCE} -F
+fi
+
+DATE=$(date +"%Y-%m-%d") # Get the current date
+LOGS="${ROOTDIR}/logs"
+REPORTS="${ROOTDIR}/reports"
+
+logfile=$(ls -t ${LOGS} | egrep "${DATE}.*${IDENTIFIER}" | head -1)
+reportfile=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1)
+diffnum=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1 | cut -d'_' -f6)
+changes=${diffnum:0:1}
+
+(echo "Changes since the last time: ${changes}"; uuencode "${LOGS}/${LOGFILE}" "${LOGFILE}"; uuencode "${REPORTS}/${REPORTFILE}" "${REPORTFILE}") \
+| mail -s "Selenium Tests Report: ${IDENTIFIER} ${email_date} Changes: ${changes}" email@example.com
