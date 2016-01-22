@@ -122,6 +122,7 @@ def create_webdriver(command_executor, desired_capabilities):
     # missing from the desired_capabilities dict above.
     _capabilities = desired_capabilities
     browser_profile = None
+    browser_profile_path = None
 
     if browser_name == "chrome":
         desired_capabilities = DesiredCapabilities.CHROME.copy()
@@ -149,12 +150,16 @@ def create_webdriver(command_executor, desired_capabilities):
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
         desired_capabilities.update(_capabilities)
         browser_profile = _get_firefox_profile()
+        browser_profile_path = browser_profile.path
         browser_profile.set_preference("general.useragent.override", TESTS_USER_AGENT)
         desired_capabilities["firefox_profile"] = browser_profile.update_preferences()
     else:
         raise ValueError("Invalid webdriver %s (only chrome and firefox are supported)" % browser_name)
-    return webdriver.Remote(
-        command_executor=command_executor,
-        desired_capabilities=desired_capabilities,
-        browser_profile=browser_profile,
-    )
+    return {
+        'driver': webdriver.Remote(
+            command_executor=command_executor,
+            desired_capabilities=desired_capabilities,
+            browser_profile=browser_profile,
+        ),
+        'profile_path': browser_profile_path
+    }
