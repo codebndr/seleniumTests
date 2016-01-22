@@ -8,6 +8,7 @@ This is also where command-line arguments and pytest markers are defined.
 
 import os
 import sys
+import shutil
 
 import pytest
 
@@ -55,7 +56,9 @@ def webdriver(request, desired_capabilities):
 
     command_executor = os.environ['CODEBENDER_SELENIUM_HUB_URL']
 
-    driver = config.create_webdriver(command_executor, desired_capabilities)
+    webdriver = config.create_webdriver(command_executor, desired_capabilities)
+    driver = webdriver['driver']
+    profile_path = webdriver['profile_path']
 
     # TODO: update sauce status via SauceClient, but only if the command_executor
     # is a sauce URL.
@@ -70,6 +73,9 @@ def webdriver(request, desired_capabilities):
             #     sauce.jobs.update_job(driver.session_id, passed=False)
         finally:
             driver.quit()
+            if profile_path and os.path.exists(profile_path):
+                print '\n\nRemoving browser profile directory:', profile_path
+                shutil.rmtree(profile_path, ignore_errors=True)
 
     request.addfinalizer(finalizer)
     return driver
