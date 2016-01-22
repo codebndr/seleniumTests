@@ -587,6 +587,7 @@ class CodebenderSeleniumBot(object):
 
             # Used when not funning in Full mode
             if logfile is None or not self.run_full_compile_tests:
+                toc = time.time()
                 continue
 
             # Register current URL into log
