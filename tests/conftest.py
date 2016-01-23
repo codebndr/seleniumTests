@@ -60,19 +60,10 @@ def webdriver(request, desired_capabilities):
     driver = webdriver['driver']
     profile_path = webdriver['profile_path']
 
-    # TODO: update sauce status via SauceClient, but only if the command_executor
-    # is a sauce URL.
     def finalizer():
-        # print("Link to your job: https://saucelabs.com/jobs/%s" % driver.session_id)
         try:
-            pass
-            # TODO:
-            # if sys.exc_info() == (None, None, None):
-            #     sauce.jobs.update_job(driver.session_id, passed=True)
-            # else:
-            #     sauce.jobs.update_job(driver.session_id, passed=False)
-        finally:
             driver.quit()
+        finally:
             if profile_path and os.path.exists(profile_path):
                 print '\n\nRemoving browser profile directory:', profile_path
                 shutil.rmtree(profile_path, ignore_errors=True)
