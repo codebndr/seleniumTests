@@ -77,6 +77,8 @@ class DisqusWrapper:
     def handle_library_comment(self, library, current_date, log):
         url = '/library/' + library
         identifier = 'ident:' + url
+        if url not in log:
+            log[url] = {}
         try:
             paginator = disqusapi.Paginator(self.disqus.api.threads.list, forum=FORUM, thread=identifier, method='GET')
             if paginator:
@@ -84,8 +86,6 @@ class DisqusWrapper:
                         post_id, existing_message = self.get_posts(page['id'])
                         if post_id and existing_message:
                             new_message = self.messages['library'].replace('TEST_DATE', current_date)
-                            if url not in log:
-                                log[url] = {}
                             log[url]['comment'] = self.update_post(post_id, new_message)
             else:
                 log[url]['comment'] = False
