@@ -75,6 +75,9 @@ VERIFY_TIMEOUT = 30
 VERIFICATION_SUCCESSFUL_MESSAGE = "Verification Successful"
 VERIFICATION_FAILED_MESSAGE = "Verification failed."
 
+VERIFICATION_SUCCESSFUL_MESSAGE_EDITOR = 'Verification successful!'
+VERIFICATION_FAILED_MESSAGE_EDITOR = 'Verification failed!'
+
 # Max test runtime into saucelabs
 # 2.5 hours (3 hours max)
 SAUCELABS_TIMEOUT_SECONDS = 10800 - 1800
@@ -460,7 +463,7 @@ class CodebenderSeleniumBot(object):
 
         report_creator('fetch', log_entry, log_file)
 
-    def compile_sketch(self, url, boards, iframe=False):
+    def compile_sketch(self, url, boards, iframe=False, project_view=False):
         """Compiles the sketch located at `url`, or an iframe within the page
         referred to by `url`.  Raises an exception if it does not compile.
         """
@@ -481,6 +484,11 @@ class CodebenderSeleniumBot(object):
             result = {
                 'board': board
             }
+            verification_success_message = VERIFICATION_SUCCESSFUL_MESSAGE_EDITOR
+            verification_failed_message = VERIFICATION_FAILED_MESSAGE_EDITOR
+            if project_view or iframe:
+                verification_success_message = VERIFICATION_SUCCESSFUL_MESSAGE
+                verification_failed_message = VERIFICATION_FAILED_MESSAGE
             try:
                 self.execute_script(SELECT_BOARD_SCRIPT(board), '$', 'compilerflasher.pluginHandler.plugin_found')
                 self.execute_script(_VERIFY_SCRIPT, 'compilerflasher')
@@ -490,15 +498,14 @@ class CodebenderSeleniumBot(object):
                 compile_result = WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
                     any_text_to_be_present_in_element(
                         (By.CSS_SELECTOR, "[id$=operation_output]"),
-                        VERIFICATION_SUCCESSFUL_MESSAGE, VERIFICATION_FAILED_MESSAGE
+                        verification_success_message, verification_failed_message
                     )
                 )
             except WebDriverException as error:
                 compile_result = "%s; %s" % (type(error).__name__, str(error))
                 result['status'] = 'error'
                 result['message'] = compile_result
-
-            if compile_result == VERIFICATION_SUCCESSFUL_MESSAGE:
+            if compile_result == verification_success_message:
                 result['status'] = 'success'
             else:
                 result['status'] = 'fail'
@@ -521,7 +528,7 @@ class CodebenderSeleniumBot(object):
         assert len(sketches) > 0
         self.compile_sketches(sketches, **kwargs)
 
-    def compile_sketches(self, sketches, iframe=False, logfile=None, compile_type='sketch', create_report=False, comment=False):
+    def compile_sketches(self, sketches, iframe=False, project_view=False, logfile=None, compile_type='sketch', create_report=False, comment=False):
         """Compiles the sketches with URLs given by the `sketches` list.
         `logfile` specifies a path to a file to which test results will be
         logged. If it is not `None`, compile errors will not cause the test
@@ -577,7 +584,7 @@ class CodebenderSeleniumBot(object):
 
             if len(boards) > 0:
                 # Run Verify
-                results = self.compile_sketch(sketch, boards, iframe=iframe)
+                results = self.compile_sketch(sketch, boards, iframe=iframe, project_view=project_view)
             else:
                 results = [
                     {

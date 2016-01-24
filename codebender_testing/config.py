@@ -24,6 +24,7 @@ def jsondump(data):
 BASE_URL = "http://localhost"
 # URL of the actual Codebender website
 LIVE_SITE_URL = "https://codebender.cc"
+STAGING_SITE_URL = "https://staging.codebender.cc"
 
 # Names of sources (i.e. repositories) used to generate the codebender site.
 SOURCE_BACHELOR = 'bachelor'
@@ -32,6 +33,7 @@ SOURCE_CODEBENDER_CC = 'codebender_cc'
 # User whose projects we'd like to compile in our compile_tester
 # test case(s).
 COMPILE_TESTER_URL = "/user/cb_compile_tester"
+COMPILE_TESTER_STAGING_URL = "/user/demo_user"
 
 # The prefix for all filenames of log files.
 # Note that it is given as a time format string, which will
