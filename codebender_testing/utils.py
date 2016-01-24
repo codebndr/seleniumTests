@@ -344,7 +344,7 @@ class CodebenderSeleniumBot(object):
         """Like `get_element`, but returns a list of all elements matching
         the selector."""
         WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
-            expected_conditions.visibility_of_all_elements_located_by(locator))
+            expected_conditions.presence_of_all_elements_located(locator))
         return self.driver.find_elements(*locator)
 
     def find(self, selector):
