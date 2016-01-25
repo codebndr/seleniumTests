@@ -7,7 +7,6 @@ This is also where command-line arguments and pytest markers are defined.
 """
 
 import os
-import sys
 import shutil
 
 import pytest
