@@ -4,8 +4,6 @@ from codebender_testing.config import COMPILE_TESTER_URL
 from codebender_testing.config import LIVE_SITE_URL
 from codebender_testing.config import STAGING_SITE_URL
 from codebender_testing.config import COMPILE_TESTER_STAGING_URL
-from codebender_testing.config import SOURCE_BACHELOR
-from codebender_testing.config import TIMEOUT
 from selenium.webdriver.common.by import By
 from codebender_testing.utils import SeleniumTestCase
 import os
