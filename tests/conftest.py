@@ -34,6 +34,10 @@ def pytest_addoption(parser):
                      default=config.DEFAULT_CAPABILITIES_FILE_PATH,
                      help="Custom path to a YAML file containing a capability list.")
 
+    parser.addoption("-P", "--plugin", action="store_true",
+                     default=False,
+                     help="Install plugin in Firefox profile")
+
 
 def pytest_generate_tests(metafunc):
     """Special function used by pytest to configure test generation."""

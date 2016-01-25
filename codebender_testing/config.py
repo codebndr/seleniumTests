@@ -5,6 +5,7 @@ from selenium.webdriver import chrome
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import yaml
 import simplejson
+import pytest
 
 
 def _rel_path(*args):
@@ -90,9 +91,10 @@ def _get_firefox_profile():
     extension.
     """
     firefox_profile = webdriver.FirefoxProfile()
-    firefox_profile.add_extension(
-        extension=os.path.join(_EXTENSIONS_DIR, _FIREFOX_EXTENSION_FNAME)
-    )
+    if pytest.config.getoption("--plugin"):
+        firefox_profile.add_extension(
+            extension=os.path.join(_EXTENSIONS_DIR, _FIREFOX_EXTENSION_FNAME)
+        )
     return firefox_profile
 
 def get_browsers(capabilities_file_path=None):
