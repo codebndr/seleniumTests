@@ -31,8 +31,7 @@ class TestCompileTester(SeleniumTestCase):
         (stored locally in test_data/cb_compile_tester), compile them,
         and finally delete them."""
         filenames = next(os.walk(COMPILE_TESTER_DIR))[2]
-        test_files = [os.path.join(COMPILE_TESTER_DIR, name) for name
-            in next(os.walk(COMPILE_TESTER_DIR))[2]]
+        test_files = [os.path.join(COMPILE_TESTER_DIR, name) for name in filenames]
         projects = [self.upload_project('#uploadFolderZip form', fname,
             os.path.splitext(os.path.basename(fname))[0]) for fname
             in test_files]
