@@ -9,7 +9,7 @@ from urlparse import urlparse
 TIMEOUT = 30
 
 class TestAlerts(SeleniumTestCase):
-    
+
     @pytest.fixture(scope="class", autouse=True)
     def create_test_project(self, tester_login):
         """Makes sure we are logged in and have a project open before
@@ -22,7 +22,7 @@ class TestAlerts(SeleniumTestCase):
         " the codebender plugin." in operation_output.text
 
     def test_remove_sketch(self):
-        self.delete_project(TEST_PROJECT_NAME)     
+        self.delete_project(TEST_PROJECT_NAME)
 
     def test_library_example(self, tester_logout):
         self.open('/libraries')
@@ -40,9 +40,9 @@ class TestAlerts(SeleniumTestCase):
         if flash_btn.is_enabled():
             assert False
         else:
-            pass 
+            pass
 
-    def test_embeded_view(self, tester_logout):   
+    def test_embeded_view(self, tester_logout):
         self.open('/embed/microview_test')
         output = self.driver.find_element_by_id('cb_cf_operation_output')
         assert "To program your Arduino from your browser, install" \
@@ -51,19 +51,19 @@ class TestAlerts(SeleniumTestCase):
         if microview_test.is_enabled():
             assert False
         else:
-            pass 
+            pass
 
-    def test_walkthrough_page_2(self, tester_logout):   
+    def test_walkthrough_page_2(self, tester_logout):
         self.open('/static/walkthrough/page/2')
         output = self.driver.find_element_by_id('cb_cf_operation_output')
         assert "To program your Arduino from your browser, install" \
         " the codebender plugin." in output.text
 
-    def test_walkthrough_page_3(self, tester_logout):   
+    def test_walkthrough_page_3(self, tester_logout):
         self.open('/static/walkthrough/page/3')
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#mycontainer h1 small"), 
+                (By.CSS_SELECTOR, "#mycontainer h1 small"),
                 "Page 2 of 5"
             )
         )
@@ -71,11 +71,11 @@ class TestAlerts(SeleniumTestCase):
         assert current_url.path == '/static/walkthrough/page/2'
 
 
-    def test_walkthrough_page_4(self, tester_logout):   
+    def test_walkthrough_page_4(self, tester_logout):
         self.open('/static/walkthrough/page/4')
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#mycontainer h1 small"), 
+                (By.CSS_SELECTOR, "#mycontainer h1 small"),
                 "Page 2 of 5"
             )
         )
