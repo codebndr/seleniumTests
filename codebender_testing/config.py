@@ -43,6 +43,7 @@ LOGFILE_PREFIX = _rel_path("..", "logs", "%Y-%m-%d_%H-%M-%S-{log_name}.json")
 
 # Logfile for COMPILE_TESTER compilation results
 COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
+COMPILE_TESTER_LOGFILE_STAGING = LOGFILE_PREFIX.format(log_name="staging_cb_compile_tester")
 
 # Logfile for /libraries compilation results
 LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")

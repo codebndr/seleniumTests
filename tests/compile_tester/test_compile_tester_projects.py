@@ -1,5 +1,6 @@
 from codebender_testing.config import COMPILE_TESTER_DIR
 from codebender_testing.config import COMPILE_TESTER_LOGFILE
+from codebender_testing.config import COMPILE_TESTER_LOGFILE_STAGING
 from codebender_testing.config import COMPILE_TESTER_URL
 from codebender_testing.config import LIVE_SITE_URL
 from codebender_testing.config import STAGING_SITE_URL
@@ -46,6 +47,6 @@ class TestCompileTester(SeleniumTestCase):
             '#user_projects tbody a',
             iframe=False,
             compile_type='sketch',
-            create_report=True, logfile=COMPILE_TESTER_LOGFILE)
+            create_report=True, logfile=COMPILE_TESTER_LOGFILE_STAGING)
         for name in projects:
             self.delete_project(name.replace(" ", "-"))
