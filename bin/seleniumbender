@@ -67,7 +67,7 @@ if [ "${common}" -eq 1 ]; then
     tox tests/common -- --url=${URL} --source=${SOURCE} --plugin
     RETVAL=$?
     if [ "${RETVAL}" -eq 1 ]; then
-        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with common tests. Please check the logs.'
+        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" ${EMAIL} <<< 'Something went wrong with common tests. Please check the logs.'
     fi
     exit ${RETVAL}
 elif [ "${examples}" -eq 1 ]; then
@@ -88,7 +88,7 @@ elif [ "${noplugin}" -eq 1 ]; then
     tox tests/noplugin -- --url=${URL} --source=${SOURCE}
     RETVAL=$?
     if [ "${RETVAL}" -eq 1 ]; then
-        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with noplugin tests. Please check the logs.'
+        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" ${EMAIL} <<< 'Something went wrong with noplugin tests. Please check the logs.'
     fi
     exit ${RETVAL}
 elif [ "${walkthrough}" -eq 1 ]; then
@@ -115,7 +115,7 @@ elif [ "${walkthrough}" -eq 1 ]; then
         fi
     done
     if [ "${RETVAL}" -ne 0 ]; then
-        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with noplugin tests. Please check the logs.'
+        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" ${EMAIL} <<< 'Something went wrong with noplugin tests. Please check the logs.'
     fi
     exit ${RETVAL}
 fi
@@ -130,4 +130,4 @@ diffnum=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1 | cut -d'_
 changes=${diffnum:0:1}
 
 (echo "Changes since the last time: ${changes}"; uuencode "${LOGS}/${LOGFILE}" "${LOGFILE}"; uuencode "${REPORTS}/${REPORTFILE}" "${REPORTFILE}") \
-| mail -s "Selenium Tests Report: ${IDENTIFIER} ${email_date} Changes: ${changes}" email@example.com
+| mail -s "Selenium Tests Report: ${IDENTIFIER} ${email_date} Changes: ${changes}" ${EMAIL}
