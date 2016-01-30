@@ -65,8 +65,8 @@ if [ "${common}" -eq 1 ]; then
     RETVAL=$?
     if [ "${RETVAL}" -eq 1 ]; then
         mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with common tests. Please check the logs.'
-        exit ${RETVAL}
     fi
+    exit ${RETVAL}
 elif [ "${examples}" -eq 1 ]; then
     IDENTIFIER="libraries_test"
     tox tests/libraries -- --url=${URL} --source=${SOURCE} -F --plugin
@@ -86,8 +86,8 @@ elif [ "${noplugin}" -eq 1 ]; then
     RETVAL=$?
     if [ "${RETVAL}" -eq 1 ]; then
         mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with noplugin tests. Please check the logs.'
-        exit ${RETVAL}
     fi
+    exit ${RETVAL}
 fi
 
 DATE=$(date +"%Y-%m-%d") # Get the current date
