@@ -83,7 +83,8 @@ TIMEOUT = {
     'LOCATE_ELEMENT': 30
 }
 
-TESTS_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+DEFAULT_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+TESTS_USER_AGENT = os.getenv('SELENIUM_USER_AGENT', DEFAULT_USER_AGENT)
 
 # Set up Selenium Webdrivers to be used for selenium tests
 def _get_firefox_profile():

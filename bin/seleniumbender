@@ -18,6 +18,7 @@ examples=0
 sketches=0
 staging=0
 noplugin=0
+walkthrough=0
 
 while true; do
     case "$1" in
@@ -41,6 +42,8 @@ while true; do
         staging) staging=1
             ;;
         noplugin) noplugin=1
+            ;;
+        walkthrough) walkthrough=1
             ;;
         -*) echo -e "error: unknown argument: ${1}.\nRun ${app_name} -h."
             exit 1
@@ -85,6 +88,33 @@ elif [ "${noplugin}" -eq 1 ]; then
     tox tests/noplugin -- --url=${URL} --source=${SOURCE}
     RETVAL=$?
     if [ "${RETVAL}" -eq 1 ]; then
+        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with noplugin tests. Please check the logs.'
+    fi
+    exit ${RETVAL}
+elif [ "${walkthrough}" -eq 1 ]; then
+    IDENTIFIER="walkthrough"
+    RETVALS=()
+    # Linux
+    export SELENIUM_USER_AGENT='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    RETVALS+=($?)
+    # Windows
+    export SELENIUM_USER_AGENT='Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    RETVALS+=($?)
+    # MacOSX
+    export SELENIUM_USER_AGENT='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    RETVALS+=($?)
+
+    RETVAL=0
+    for i in "${RETVALS[@]}"
+    do
+        if [ ${i} -ne 0 ]; then
+            RETVAL=${i}
+        fi
+    done
+    if [ "${RETVAL}" -ne 0 ]; then
         mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with noplugin tests. Please check the logs.'
     fi
     exit ${RETVAL}
