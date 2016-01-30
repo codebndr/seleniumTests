@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 TIMEOUT = 30
 
 class TestHowItWorks(SeleniumTestCase):
-    
+
     @pytest.fixture(scope="class")
     def skip_button_display (self):
         skip_button = self.driver.find_element_by_id('skip-all-steps-button')
@@ -22,7 +22,7 @@ class TestHowItWorks(SeleniumTestCase):
 
     def test_skip_button (self):
         skip_button = self.driver.find_element_by_id('skip-all-steps-button')
-        skip_button.send_keys(Keys.ENTER)
+        skip_button.click()
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
                 (By.CSS_SELECTOR, ".popover-title"), "That's all for now."
@@ -36,37 +36,37 @@ class TestHowItWorks(SeleniumTestCase):
     def test_how_it_works_page_1 (self, skip_button_display):
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#hiw-one .popover-title"), 
+                (By.CSS_SELECTOR, "#hiw-one .popover-title"),
                 "Awesome editor (1/6)"
             )
-        )  
+        )
         next_button = self.find('#hiw-one .popover-content .btn-primary')
         next_button.click()
 
     def test_how_it_works_page_2 (self, skip_button_display):
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#hiw-two .popover-title"), 
+                (By.CSS_SELECTOR, "#hiw-two .popover-title"),
                 "Helpful utilities (2/6)"
             )
-        )  
+        )
         next_button = self.find('#hiw-two .popover-content .btn-primary')
         next_button.click()
-    
+
     def test_how_it_works_page_3 (self, skip_button_display):
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#hiw-three .popover-title"), 
+                (By.CSS_SELECTOR, "#hiw-three .popover-title"),
                 "Compile & Upload (3/6)"
             )
-        )  
+        )
         verify_button = self.find('#cb_cf_verify_btn')
         verify_button.click()
 
     def test_how_it_works_page_4 (self, skip_button_display):
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#hiw-four .popover-title"), 
+                (By.CSS_SELECTOR, "#hiw-four .popover-title"),
                 "Better error output (4/6)"
             )
         )
@@ -74,7 +74,7 @@ class TestHowItWorks(SeleniumTestCase):
         var cursor_position = editor.aceEditor.getCursorPosition();
         editor.aceEditor.getSession().insert(cursor_position, ';')
         """
-        self.execute_script(insert_text, "editor") 
+        self.execute_script(insert_text, "editor")
         verify_button = self.find('#cb_cf_verify_btn')
         verify_button.click()
 
@@ -82,10 +82,10 @@ class TestHowItWorks(SeleniumTestCase):
     def test_how_it_works_page_5 (self, skip_button_display):
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#hiw-five .popover-title"), 
+                (By.CSS_SELECTOR, "#hiw-five .popover-title"),
                 "Share (5/6)"
             )
-        )  
+        )
         next_button = self.find('#hiw-five .popover-content .btn-primary')
         next_button.click()
 
@@ -93,10 +93,10 @@ class TestHowItWorks(SeleniumTestCase):
     def test_how_it_works_page_6 (self, skip_button_display):
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "#hiw-six .popover-title"), 
+                (By.CSS_SELECTOR, "#hiw-six .popover-title"),
                 "Collaborate (6/6)"
             )
-        )  
+        )
         finish_button = self.find('.popover-content .btn-primary')
         finish_button.click()
 
@@ -105,8 +105,8 @@ class TestHowItWorks(SeleniumTestCase):
         skip_button.is_displayed() == False
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, 
-                '.navbar .popover:nth-child(3) .popover-title'), 
+                (By.CSS_SELECTOR,
+                '.navbar .popover:nth-child(3) .popover-title'),
                 "That's all for now."
             )
         )
