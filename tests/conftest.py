@@ -37,6 +37,10 @@ def pytest_addoption(parser):
                      default=False,
                      help="Install plugin in Firefox profile")
 
+    parser.addoption("-L", "--libraries", action="store",
+                     default='',
+                     help="Target libraries to test")
+
 
 def pytest_generate_tests(metafunc):
     """Special function used by pytest to configure test generation."""

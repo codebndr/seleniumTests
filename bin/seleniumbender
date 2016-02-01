@@ -19,6 +19,7 @@ sketches=0
 staging=0
 noplugin=0
 walkthrough=0
+target=0
 
 while true; do
     case "$1" in
@@ -36,6 +37,12 @@ while true; do
         libraries) libraries=1
             ;;
         examples) examples=1
+            ;;
+        target) compile=1
+            shift
+            target=1
+            TARGETS=$@
+            break
             ;;
         sketches) sketches=1
             ;;
@@ -118,6 +125,9 @@ elif [ "${walkthrough}" -eq 1 ]; then
         mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" ${EMAIL} <<< 'Something went wrong with noplugin tests. Please check the logs.'
     fi
     exit ${RETVAL}
+elif [ "${target}" -eq 1 ]; then
+    IDENTIFIER="test_target_libraries"
+    tox tests/target_libraries -- --url=${URL} --source=${SOURCE} -F --plugin --libraries=${TARGETS}
 fi
 
 DATE=$(date +"%Y-%m-%d") # Get the current date
