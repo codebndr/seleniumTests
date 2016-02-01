@@ -7,7 +7,6 @@ This is also where command-line arguments and pytest markers are defined.
 """
 
 import os
-import sys
 import shutil
 
 import pytest
@@ -33,6 +32,14 @@ def pytest_addoption(parser):
     parser.addoption("-C", "--capabilities", action="store",
                      default=config.DEFAULT_CAPABILITIES_FILE_PATH,
                      help="Custom path to a YAML file containing a capability list.")
+
+    parser.addoption("-P", "--plugin", action="store_true",
+                     default=False,
+                     help="Install plugin in Firefox profile")
+
+    parser.addoption("-L", "--libraries", action="store",
+                     default='',
+                     help="Target libraries to test")
 
 
 def pytest_generate_tests(metafunc):
@@ -60,19 +67,10 @@ def webdriver(request, desired_capabilities):
     driver = webdriver['driver']
     profile_path = webdriver['profile_path']
 
-    # TODO: update sauce status via SauceClient, but only if the command_executor
-    # is a sauce URL.
     def finalizer():
-        # print("Link to your job: https://saucelabs.com/jobs/%s" % driver.session_id)
         try:
-            pass
-            # TODO:
-            # if sys.exc_info() == (None, None, None):
-            #     sauce.jobs.update_job(driver.session_id, passed=True)
-            # else:
-            #     sauce.jobs.update_job(driver.session_id, passed=False)
-        finally:
             driver.quit()
+        finally:
             if profile_path and os.path.exists(profile_path):
                 print '\n\nRemoving browser profile directory:', profile_path
                 shutil.rmtree(profile_path, ignore_errors=True)

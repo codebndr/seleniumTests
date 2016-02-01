@@ -7,5 +7,7 @@ class TestLibraryExamples(SeleniumTestCase):
     def test_compile_all_libraries(self):
         """Tests that all library examples compile successfully."""
         self.compile_all_sketches('/libraries', '.accordion li a',
-                                  logfile=LIBRARIES_TEST_LOGFILE,
-                                  compile_type='library', create_report=True, comment=True)
+                                  compile_type='library',
+                                  iframe=False, project_view=True,
+                                  create_report=True, logfile=LIBRARIES_TEST_LOGFILE,
+                                  comment=True)

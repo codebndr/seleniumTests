@@ -5,6 +5,7 @@ from selenium.webdriver import chrome
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import yaml
 import simplejson
+import pytest
 
 
 def _rel_path(*args):
@@ -24,6 +25,7 @@ def jsondump(data):
 BASE_URL = "http://localhost"
 # URL of the actual Codebender website
 LIVE_SITE_URL = "https://codebender.cc"
+STAGING_SITE_URL = "https://staging.codebender.cc"
 
 # Names of sources (i.e. repositories) used to generate the codebender site.
 SOURCE_BACHELOR = 'bachelor'
@@ -32,6 +34,7 @@ SOURCE_CODEBENDER_CC = 'codebender_cc'
 # User whose projects we'd like to compile in our compile_tester
 # test case(s).
 COMPILE_TESTER_URL = "/user/cb_compile_tester"
+COMPILE_TESTER_STAGING_URL = "/user/demo_user"
 
 # The prefix for all filenames of log files.
 # Note that it is given as a time format string, which will
@@ -40,6 +43,7 @@ LOGFILE_PREFIX = _rel_path("..", "logs", "%Y-%m-%d_%H-%M-%S-{log_name}.json")
 
 # Logfile for COMPILE_TESTER compilation results
 COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
+COMPILE_TESTER_LOGFILE_STAGING = LOGFILE_PREFIX.format(log_name="staging_cb_compile_tester")
 
 # Logfile for /libraries compilation results
 LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
@@ -79,7 +83,8 @@ TIMEOUT = {
     'LOCATE_ELEMENT': 30
 }
 
-TESTS_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+DEFAULT_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+TESTS_USER_AGENT = os.getenv('SELENIUM_USER_AGENT', DEFAULT_USER_AGENT)
 
 # Set up Selenium Webdrivers to be used for selenium tests
 def _get_firefox_profile():
@@ -88,9 +93,10 @@ def _get_firefox_profile():
     extension.
     """
     firefox_profile = webdriver.FirefoxProfile()
-    firefox_profile.add_extension(
-        extension=os.path.join(_EXTENSIONS_DIR, _FIREFOX_EXTENSION_FNAME)
-    )
+    if pytest.config.getoption("--plugin"):
+        firefox_profile.add_extension(
+            extension=os.path.join(_EXTENSIONS_DIR, _FIREFOX_EXTENSION_FNAME)
+        )
     return firefox_profile
 
 def get_browsers(capabilities_file_path=None):

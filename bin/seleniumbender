@@ -1,10 +1,6 @@
 #!/bin/bash
 
-export CAPABILITIES='capabilities_firefox.yaml'
-
 source ./env_vars.sh
-
-ROOTDIR="/path/to/seleniumTests"
 
 if [ $# -lt 1 ]; then
     echo "Please provide an argument or run -h(--help) option"
@@ -12,10 +8,15 @@ if [ $# -lt 1 ]; then
 fi
 
 app_name="$0"
-common=0
-libraries=0
+
+target=0
 examples=0
+libraries=0
 sketches=0
+common=0
+noplugin=0
+walkthrough=0
+staging=0
 
 while true; do
     case "$1" in
@@ -25,16 +26,31 @@ while true; do
                 " libraries - Visits all the libraries and examples at libraries view\n"  \
                 " examples - Compiles all the examples at libraries view\n"   \
                 " sketches - Compiles the examples of user cb_compile_tester\n"    \
+                " target - Compiles the examples of given libraries as a comma separated list\n"    \
+                " noplugin - Runs tests that do not need plugin installed\n"  \
+                " walkthrough - Runs tests for walkthrough\n"  \
+                " staging - Runs tests in staging\n"  \
                 " help - Display this help and exit"
             exit 0
             ;;
-        common) common=1
-            ;;
-        libraries) libraries=1
+        target) target=1
+            shift
+            TARGETS=$@
+            break
             ;;
         examples) examples=1
             ;;
+        libraries) libraries=1
+            ;;
         sketches) sketches=1
+            ;;
+        common) common=1
+            ;;
+        noplugin) noplugin=1
+            ;;
+        walkthrough) walkthrough=1
+            ;;
+        staging) staging=1
             ;;
         -*) echo -e "error: unknown argument: ${1}.\nRun ${app_name} -h."
             exit 1
@@ -52,25 +68,72 @@ SOURCE="codebender_cc"
 
 email_date=$(date +"%Y-%m-%d %H:%M:%S")
 
-if [ "${common}" -eq 1 ]; then
-    IDENTIFIER="common"
-    tox tests/common -- --url=${URL} --source=${SOURCE}
-    RETVAL=$?
-    if [ "${RETVAL}" -eq 1 ]; then
-        mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" email@example.com <<< 'Something went wrong with common tests. Please check the logs.'
-        exit ${RETVAL}
-    fi
+RETVAL=0
+NO_LOGS=0 # flag for tests that do not send any logs on their email
+
+if [ "${target}" -eq 1 ]; then
+    IDENTIFIER="test_target_libraries"
+    tox tests/target_libraries -- --url=${URL} --source=${SOURCE} -F --plugin --libraries=${TARGETS}
 elif [ "${examples}" -eq 1 ]; then
     IDENTIFIER="libraries_test"
-    tox tests/libraries -- --url=${URL} --source=${SOURCE} -F
+    tox tests/libraries -- --url=${URL} --source=${SOURCE} -F --plugin
 elif [ "${libraries}" -eq 1 ]; then
     IDENTIFIER="libraries_fetch"
-    tox tests/libraries_fetch -- --url=${URL} --source=${SOURCE} -F
+    tox tests/libraries_fetch -- --url=${URL} --source=${SOURCE} -F --plugin
 elif [ "${sketches}" -eq 1 ]; then
     IDENTIFIER="cb_compile_tester"
-    tox tests/compile_tester -- --url=${URL} --source=${SOURCE} -F
+    tox tests/compile_tester -- --url=${URL} --source=${SOURCE} -F --plugin
+elif [ "${common}" -eq 1 ]; then
+    IDENTIFIER="common"
+    tox tests/common -- --url=${URL} --source=${SOURCE} --plugin
+    RETVAL=$?
+    NO_LOGS=1
+elif [ "${noplugin}" -eq 1 ]; then
+    IDENTIFIER="noplugin"
+    tox tests/noplugin -- --url=${URL} --source=${SOURCE}
+    RETVAL=$?
+    NO_LOGS=1
+elif [ "${walkthrough}" -eq 1 ]; then
+    IDENTIFIER="walkthrough"
+    RETVALS=()
+    # Linux
+    export SELENIUM_USER_AGENT='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    RETVALS+=($?)
+    # Windows
+    export SELENIUM_USER_AGENT='Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    RETVALS+=($?)
+    # MacOSX
+    export SELENIUM_USER_AGENT='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
+    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    RETVALS+=($?)
+
+    for i in "${RETVALS[@]}"
+    do
+        if [ ${i} -ne 0 ]; then
+            RETVAL=${i}
+        fi
+    done
+    NO_LOGS=1
+elif [ "${staging}" -eq 1 ]; then
+    IDENTIFIER="cb_compile_tester_staging"
+    URL="https://staging.codebender.cc"
+    tox tests/compile_tester -- --url=${URL} --source=${SOURCE} -F --plugin
+    # No need to send email for tests in staging
+    exit $?
 fi
 
+# email notification without attaching any logs
+if [ ${RETVAL} -ne 0 ]; then
+    mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" ${EMAIL} <<< "Something went wrong with ${IDENTIFIER} tests. Please check the logs."
+fi
+
+if [ ${NO_LOGS} -eq 1 ]; then
+    exit ${RETVAL}
+fi
+
+# email notification with attaching the produced reports
 DATE=$(date +"%Y-%m-%d") # Get the current date
 LOGS="${ROOTDIR}/logs"
 REPORTS="${ROOTDIR}/reports"
@@ -80,5 +143,5 @@ reportfile=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1)
 diffnum=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1 | cut -d'_' -f6)
 changes=${diffnum:0:1}
 
-(echo "Changes since the last time: ${changes}"; uuencode "${LOGS}/${LOGFILE}" "${LOGFILE}"; uuencode "${REPORTS}/${REPORTFILE}" "${REPORTFILE}") \
-| mail -s "Selenium Tests Report: ${IDENTIFIER} ${email_date} Changes: ${changes}" email@example.com
+(echo "Changes since the last time: ${changes}"; uuencode "${LOGS}/${logfile}" "${logfile}"; uuencode "${REPORTS}/${reportfile}" "${reportfile}") \
+| mail -s "Selenium Tests Report: ${IDENTIFIER} ${email_date} Changes: ${changes}" ${EMAIL}
