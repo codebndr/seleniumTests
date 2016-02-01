@@ -39,8 +39,6 @@ class TestAlerts(SeleniumTestCase):
         flash_btn = self.find('#cb_cf_flash_btn')
         if flash_btn.is_enabled():
             assert False
-        else:
-            pass
 
     def test_embeded_view(self, tester_logout):
         self.open('/embed/microview_test')
@@ -50,8 +48,6 @@ class TestAlerts(SeleniumTestCase):
         microview_test = self.find('#microview_test')
         if microview_test.is_enabled():
             assert False
-        else:
-            pass
 
     def test_walkthrough_page_2(self, tester_logout):
         self.open('/static/walkthrough/page/2')
