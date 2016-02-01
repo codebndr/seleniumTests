@@ -143,5 +143,5 @@ reportfile=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1)
 diffnum=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1 | cut -d'_' -f6)
 changes=${diffnum:0:1}
 
-(echo "Changes since the last time: ${changes}"; uuencode "${LOGS}/${LOGFILE}" "${LOGFILE}"; uuencode "${REPORTS}/${REPORTFILE}" "${REPORTFILE}") \
+(echo "Changes since the last time: ${changes}"; uuencode "${LOGS}/${logfile}" "${logfile}"; uuencode "${REPORTS}/${reportfile}" "${reportfile}") \
 | mail -s "Selenium Tests Report: ${IDENTIFIER} ${email_date} Changes: ${changes}" ${EMAIL}
