@@ -6,7 +6,7 @@ from codebender_testing.utils import SeleniumTestCase
 from codebender_testing.utils import SELECT_BOARD_SCRIPT
 
 
-TEST_BOARD = 'Arduino Fio'
+TEST_BOARD = 'Arduino Uno'
 
 
 class TestUserHome(SeleniumTestCase):
@@ -30,13 +30,10 @@ class TestUserHome(SeleniumTestCase):
         """Test page 3"""
         if 'Linux' in TESTS_USER_AGENT:
             self.get_element(By.CSS_SELECTOR, '#linux-directions .btn:nth-child(2)').click()
-            self.driver.back()
         elif 'Windows' in TESTS_USER_AGENT:
             self.get_element(By.CSS_SELECTOR, '#windows-directions .btn:nth-child(2)').click()
-            self.driver.back()
         elif 'Mac' in TESTS_USER_AGENT:
             self.get_element(By.CSS_SELECTOR, '#mac-directions .btn:nth-child(2)').click()
-            self.driver.back()
 
     def test_page_4(self):
         """Test page 4"""
