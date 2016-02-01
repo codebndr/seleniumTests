@@ -69,7 +69,7 @@ SOURCE="codebender_cc"
 email_date=$(date +"%Y-%m-%d %H:%M:%S")
 
 RETVAL=0
-NO_LOGS=0
+NO_LOGS=0 # flag for tests that do not send any logs on their email
 
 if [ "${target}" -eq 1 ]; then
     IDENTIFIER="test_target_libraries"
