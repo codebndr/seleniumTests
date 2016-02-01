@@ -26,7 +26,7 @@ while true; do
                 " libraries - Visits all the libraries and examples at libraries view\n"  \
                 " examples - Compiles all the examples at libraries view\n"   \
                 " sketches - Compiles the examples of user cb_compile_tester\n"    \
-                " target - Compiles the examples of given libraries as comma seperated list\n"    \
+                " target - Compiles the examples of given libraries as a comma separated list\n"    \
                 " noplugin - Runs tests that do not need plugin installed\n"  \
                 " walkthrough - Runs tests for walkthrough\n"  \
                 " staging - Runs tests in staging\n"  \
