@@ -71,7 +71,7 @@ class DisqusWrapper:
             self.last_library = library
 
         library_to_comment = None
-        if library and library not in self.examples_without_library and library != self.last_library:
+        if self.last_library and self.last_library not in self.examples_without_library and library != self.last_library:
             library_to_comment = self.last_library
         if library and library not in self.examples_without_library and counter >= total_sketches-1:
             library_to_comment = library

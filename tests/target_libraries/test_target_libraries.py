@@ -46,7 +46,7 @@ class TestLibraryExamples(SeleniumTestCase):
         if len(urls_to_follow) > 0:
             """Tests that specific library examples compile successfully."""
             self.compile_sketches(urls_to_follow,
-                                    compile_type='library',
+                                    compile_type='target_library',
                                     iframe=False, project_view=True,
                                     create_report=True, logfile=LOG_FILE,
                                     comment=True)
