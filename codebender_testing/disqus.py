@@ -13,7 +13,6 @@ import re
 
 
 FORUM = 'codebender-cc'
-AUTHOR_NAME = 'codebender'
 AUTHOR_URL = 'https://codebender.cc/user/codebender'
 DISQUS_REQUESTS_PER_HOUR = 1000
 DISQUS_WAIT = (DISQUS_REQUESTS_PER_HOUR / 60) / 60
@@ -34,7 +33,9 @@ class DisqusWrapper:
             'email': os.getenv('DISQUS_SSO_EMAIL', None),
         }
         self.SSO_KEY = self.get_disqus_sso(self.user)
-        self.disqus = disqusapi.DisqusAPI(api_secret=self.DISQUS_API_SECRET, public_key=self.DISQUS_API_PUBLIC, remote_auth=self.SSO_KEY)
+        self.disqus = disqusapi.DisqusAPI(api_secret=self.DISQUS_API_SECRET,
+                                        public_key=self.DISQUS_API_PUBLIC,
+                                        remote_auth=self.SSO_KEY)
         self.change_log = {}
         self.last_post = None
         self.last_library = None
@@ -61,16 +62,23 @@ class DisqusWrapper:
         if not openFailFlag:
             log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
 
-        # Comment libraries when finished with the examples
+        # Comment libraries when finished commenting the examples
         library_match = re.match(r'.+\/example\/(.+)\/.+', sketch)
         library = None
         if library_match:
             library = library_match.group(1)
         if not self.last_library:
             self.last_library = library
-        if library and library != self.last_library and (library not in self.examples_without_library or counter >= total_sketches-1):
-            log_entry = self.handle_library_comment(library, current_date, log_entry)
-            self.last_library = library
+
+        library_to_comment = None
+        if library and library not in self.examples_without_library and library != self.last_library:
+            library_to_comment = self.last_library
+        if library and library not in self.examples_without_library and counter >= total_sketches-1:
+            library_to_comment = library
+        if library_to_comment:
+            log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
+
+        self.last_library = library
 
         return log_entry
 
@@ -80,65 +88,112 @@ class DisqusWrapper:
         if url not in log:
             log[url] = {}
         try:
-            paginator = disqusapi.Paginator(self.disqus.api.threads.list, forum=FORUM, thread=identifier, method='GET')
+            log[url]['comment'] = False
+            paginator = disqusapi.Paginator(self.disqus.api.threads.list,
+                                            forum=FORUM,
+                                            thread=identifier, method='GET')
             if paginator:
+                comment_updated = False
+                new_message = self.messages['library'].replace('TEST_DATE', current_date)
                 for page in paginator:
-                        post_id, existing_message = self.get_posts(page['id'])
-                        if post_id and existing_message:
-                            new_message = self.messages['library'].replace('TEST_DATE', current_date)
-                            log[url]['comment'] = self.update_post(post_id, new_message)
-            else:
-                log[url]['comment'] = False
+                    post_id, existing_message = self.get_posts(page['id'])
+                    if post_id and existing_message:
+                        log[url]['comment'] = self.update_post(post_id, new_message)
+                        comment_updated = True
+                        break
+
+                if not comment_updated:
+                    log[url]['comment'] = self.create_post(identifier, new_message)
         except Exception as error:
             print 'Error:', error
             log[url]['comment'] = False
+
         return log
 
     def handle_example_comment(self, url, results, current_date, log):
         identifier = url.replace('https://codebender.cc', '')
         identifier = 'ident:' + identifier
         try:
-            paginator = disqusapi.Paginator(self.disqus.api.threads.list, forum=FORUM, thread=identifier, method='GET')
+            log[url]['comment'] = False
+            paginator = disqusapi.Paginator(self.disqus.api.threads.list,
+                                            forum=FORUM,
+                                            thread=identifier, method='GET')
             if paginator:
-                for page in paginator:
-                        post_id, existing_message = self.get_posts(page['id'])
-                        if post_id and existing_message:
-                            boards = []
-                            unsupportedFlag = False
-                            for result in results:
-                                if result['status'] == 'success':
-                                    board = result['board']
-                                    if re.match(r'Arduino Mega.+', board):
-                                        board = 'Arduino Mega'
-                                    boards.append(board)
-                                elif result['status'] == 'unsupported':
-                                    unsupportedFlag = True
+                comment_updated = False
+                boards = []
+                unsupportedFlag = False
+                for result in results:
+                    if result['status'] == 'success':
+                        board = result['board']
+                        if re.match(r'Arduino Mega.+', board):
+                            board = 'Arduino Mega'
+                        boards.append(board)
+                    elif result['status'] == 'unsupported':
+                        unsupportedFlag = True
 
-                            new_message = self.messages['example_fail'].replace('TEST_DATE', current_date)
-                            if len(boards) > 0:
-                                new_message = self.messages['example_success'].replace('TEST_DATE', current_date).replace('BOARDS_LIST', ', '.join(boards))
-                            elif unsupportedFlag:
-                                new_message = self.messages['example_unsupported'].replace('TEST_DATE', current_date)
-                            log[url]['comment'] = self.update_post(post_id, new_message)
-                            break
-            else:
-                log[url]['comment'] = False
+                new_message = self.messages['example_fail'].replace('TEST_DATE', current_date)
+                if len(boards) > 0:
+                        new_message = self.messages['example_success'].replace('TEST_DATE', current_date).replace('BOARDS_LIST', ', '.join(boards))
+                elif unsupportedFlag:
+                    new_message = self.messages['example_unsupported'].replace('TEST_DATE', current_date)
+
+                for page in paginator:
+                    post_id, existing_message = self.get_posts(page['id'])
+                    if post_id and existing_message:
+                        log[url]['comment'] = self.update_post(post_id, new_message)
+                        comment_updated = True
+                        break
+
+                if not comment_updated:
+                    log[url]['comment'] = self.create_post(identifier, new_message)
         except Exception as error:
             print 'Error:', error
             log[url]['comment'] = False
+
         return log
 
     def get_posts(self, thread_id):
         post_id = None
         raw_message = None
-        paginator = disqusapi.Paginator(self.disqus.api.posts.list, forum=FORUM, thread=thread_id, order='asc', method='GET')
-        if paginator:
-            for result in paginator:
-                if result['author']['name'] == AUTHOR_NAME and result['author']['url'] == AUTHOR_URL:
-                    post_id = result['id']
-                    raw_message = result['raw_message']
-                    break
+        try:
+            paginator = disqusapi.Paginator(self.disqus.api.posts.list,
+                                            forum=FORUM,
+                                            thread=thread_id,
+                                            order='asc', method='GET')
+            if paginator:
+                for result in paginator:
+                    if result['author']['name'] == self.user['username'] and result['author']['url'] == AUTHOR_URL:
+                        post_id = result['id']
+                        raw_message = result['raw_message']
+                        break
+        except Exception as error:
+            print 'Error:', error
+
         return post_id, raw_message
+
+    def create_post(self, thread_id, message):
+        if not self.last_post:
+            self.last_post = message
+        elif re.match(r'^.+\.$', self.last_post):
+            message = message[:-1]
+        self.last_post = message
+
+        comment_status = False
+
+        try:
+            response = self.disqus.threads.list(api_secret=self.DISQUS_API_SECRET,
+                                                forum=FORUM,
+                                                thread=thread_id, method='GET')
+            response = self.disqus.posts.create(api_secret=self.DISQUS_API_SECRET,
+                                                remote_auth=self.SSO_KEY,
+                                                thread=response[0]['id'],
+                                                message=message, method='POST')
+            if response['raw_message'] == message:
+                comment_status = True
+        except Exception as error:
+            print 'Error:', error
+
+        return comment_status
 
     def update_post(self, post_id, message):
         if not self.last_post:
@@ -146,11 +201,18 @@ class DisqusWrapper:
         elif re.match(r'^.+\.$', self.last_post):
             message = message[:-1]
         self.last_post = message
+
+        comment_status = False
+
         try:
-            response = self.disqus.posts.update(api_secret=self.DISQUS_API_SECRET, api_key=self.DISQUS_API_PUBLIC, remote_auth=self.SSO_KEY, access_token=self.DISQUS_ACCESS_TOKEN, post=post_id, message=message, method='POST')
+            response = self.disqus.posts.update(api_secret=self.DISQUS_API_SECRET,
+                                                access_token=self.DISQUS_ACCESS_TOKEN,
+                                                remote_auth=self.SSO_KEY,
+                                                post=post_id,
+                                                message=message, method='POST')
             if response['raw_message'] == message:
-                return True
-            return False
+                comment_status = True
         except Exception as error:
             print 'Error:', error
-            return False
+
+        return comment_status
