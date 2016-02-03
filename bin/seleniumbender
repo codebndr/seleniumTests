@@ -134,14 +134,20 @@ if [ ${NO_LOGS} -eq 1 ]; then
 fi
 
 # email notification with attaching the produced reports
-DATE=$(date +"%Y-%m-%d") # Get the current date
 LOGS="${ROOTDIR}/logs"
 REPORTS="${ROOTDIR}/reports"
 
-logfile=$(ls -t ${LOGS} | egrep "${DATE}.*${IDENTIFIER}" | head -1)
-reportfile=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1)
-diffnum=$(ls -t ${REPORTS} | egrep "${DATE}.*${IDENTIFIER}" | head -1 | cut -d'_' -f6)
-changes=${diffnum:0:1}
+logfile=$(ls -t ${LOGS} | egrep "${IDENTIFIER}" | head -1)
+logfile_timestamp=${logfile:0:19}
+reportfile=$(ls -t ${REPORTS} | egrep "${logfile_timestamp}-${IDENTIFIER}" | head -1)
+if [ -z $reportfile ]; then
+    echo "No report file found. Exiting."
+    exit $?
+else
+    echo "Found report file: ${reportfile}"
+fi
+
+changes=$(echo ${reportfile} | rev | cut -d'_' -f1 | rev | cut -d'.' -f1)
 
 (echo "Changes since the last time: ${changes}"; uuencode "${LOGS}/${logfile}" "${logfile}"; uuencode "${REPORTS}/${reportfile}" "${reportfile}") \
 | mail -s "Selenium Tests Report: ${IDENTIFIER} ${email_date} Changes: ${changes}" ${EMAIL}
