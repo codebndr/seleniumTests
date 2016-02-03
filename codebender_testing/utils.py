@@ -130,6 +130,8 @@ def report_creator(compile_type, log_entry, log_file):
         logs_re = re.compile(r'.+libraries_test.+')
     elif compile_type == 'fetch':
         logs_re = re.compile(r'.+libraries_fetch.+')
+    elif compile_type == 'target_library':
+        logs_re = re.compile(r'.+target_libraries.+')
 
     logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
     tail = logs[-2:]
@@ -628,7 +630,7 @@ class CodebenderSeleniumBot(object):
                     test_status = 'U'
 
             # Update Disqus comments
-            if compile_type == 'library' and comment:
+            if compile_type in ['library', 'target_library'] and comment:
                 log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, counter, total_sketches)
 
             # Dump the test results to `logfile`.

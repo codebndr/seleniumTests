@@ -65,6 +65,7 @@ def webdriver(request, desired_capabilities):
 
     webdriver = config.create_webdriver(command_executor, desired_capabilities)
     driver = webdriver['driver']
+    driver.maximize_window()
     profile_path = webdriver['profile_path']
 
     def finalizer():
