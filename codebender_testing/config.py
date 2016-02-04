@@ -9,10 +9,13 @@ import pytest
 
 
 def _rel_path(*args):
-    """Forms a path relative to this file's directory."""
+    """Returns a path relative to config.py file's directory."""
     return os.path.join(os.path.dirname(__file__), *args)
 
 def get_path(directory, filename=None):
+    """Returns an absolute path as seen from your current working directory.
+    If a file is passed as argument, returns an aboslute path including the
+    file."""
     path = os.path.join(os.path.dirname( __file__ ), '..', directory)
     if filename:
         path = os.path.join(os.path.dirname( __file__ ), '..', directory, filename)
@@ -21,9 +24,9 @@ def get_path(directory, filename=None):
 def jsondump(data):
     return simplejson.dumps(data, sort_keys=True, indent=4 * ' ')
 
-# URL of the default site to be used for testing
+# URL of the default site to be used for testing.
 BASE_URL = "http://localhost"
-# URL of the actual Codebender website
+# URL of the actual Codebender website.
 LIVE_SITE_URL = "https://codebender.cc"
 STAGING_SITE_URL = "https://staging.codebender.cc"
 
@@ -41,29 +44,33 @@ COMPILE_TESTER_STAGING_URL = "/user/demo_user"
 # be formatted appropriately.
 LOGFILE_PREFIX = _rel_path("..", "logs", "%Y-%m-%d_%H-%M-%S-{log_name}.json")
 
-# Logfile for COMPILE_TESTER compilation results
+# Logfile for COMPILE_TESTER compilation results.
 COMPILE_TESTER_LOGFILE = LOGFILE_PREFIX.format(log_name="cb_compile_tester")
 COMPILE_TESTER_LOGFILE_STAGING = LOGFILE_PREFIX.format(log_name="staging_cb_compile_tester")
 
-# Logfile for /libraries compilation results
+# Logfile for /libraries compilation results.
 LIBRARIES_TEST_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_test")
 
-# Logfile for /libraries fetch results
+# Logfile for /libraries fetch results.
 LIBRARIES_FETCH_LOGFILE = LOGFILE_PREFIX.format(log_name="libraries_fetch")
 
+# Directory in which Firefox and Chrome extensions are stored.
 _EXTENSIONS_DIR = _rel_path('..', 'extensions')
+
+#  Firefox plugin for all Firefox versions.
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
+# Chrome extension for Chrome versions < 42.
 _CHROME_EXTENSION_FNAME = 'codebendercc-extension.crx'
 
 # Maximum version number that we can use the Chrome extension with.
-# For versions higher than this, we need to use the newer Codebender app
+# For versions higher than this, we need to use the newer Codebender app.
 CHROME_EXT_MAX_CHROME_VERSION = 41
 
-# Path to YAML file specifying capability list
+# Path to YAML file specifying capability list.
 DEFAULT_CAPABILITIES_FILE = os.getenv('CAPABILITIES', 'capabilities.yaml')
 DEFAULT_CAPABILITIES_FILE_PATH = _rel_path(DEFAULT_CAPABILITIES_FILE)
 
-# Files used for testing
+# Files used for testing.
 TEST_DATA_DIR = _rel_path('..', 'test_data')
 TEST_DATA_INO = os.path.join(TEST_DATA_DIR, 'upload_ino.ino')
 TEST_DATA_ZIP = os.path.join(TEST_DATA_DIR, 'upload_zip.zip')
@@ -71,7 +78,7 @@ TEST_DATA_ZIP = os.path.join(TEST_DATA_DIR, 'upload_zip.zip')
 # Directory in which the local compile tester files are stored.
 COMPILE_TESTER_DIR = os.path.join(TEST_DATA_DIR, 'cb_compile_tester')
 
-# Credentials to use when logging into the bachelor site
+# Credentials to use when logging into the bachelor site.
 TEST_CREDENTIALS = {
     "username": "tester",
     "password": "testerPASS"
@@ -86,7 +93,7 @@ TIMEOUT = {
 DEFAULT_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
 TESTS_USER_AGENT = os.getenv('SELENIUM_USER_AGENT', DEFAULT_USER_AGENT)
 
-# Set up Selenium Webdrivers to be used for selenium tests
+# Set up Selenium Webdrivers to be used for selenium tests.
 def _get_firefox_profile():
     """Returns the Firefox profile to be used for the FF webdriver.
     Specifically, we're equipping the webdriver with the Codebender
