@@ -61,6 +61,8 @@ _EXTENSIONS_DIR = _rel_path('..', 'extensions')
 _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
 # Chrome extension for Chrome versions < 42.
 _CHROME_EXTENSION_FNAME = 'codebendercc-extension.crx'
+# Chrome extension for Chrome versions >= 42.
+_CHROME_APP_FNAME = 'chrome-app-1.0.0.8.zip'
 
 # Maximum version number that we can use the Chrome extension with.
 # For versions higher than this, we need to use the newer Codebender app.
@@ -140,24 +142,16 @@ def create_webdriver(command_executor, desired_capabilities):
     if browser_name == "chrome":
         desired_capabilities = DesiredCapabilities.CHROME.copy()
         desired_capabilities.update(_capabilities)
-
-        # NOTE: the following logic is disabled since the remote webdriver is
-        # not properly installing the codebender extension. It is kept for
-        # reference until we can figure out how to properly add the Chrome
-        # extension.
-
-        # # Add chrome extension to capabilities
-        # options = chrome.options.Options()
-        # options.add_extension(os.path.join(_EXTENSIONS_DIR, _CHROME_EXTENSION_FNAME))
-        # desired_capabilities.update(options.to_capabilities())
-        # # Right now we only support up to v41 for this testing suite.
-        # if "version" in desired_capabilities:
-        #     if desired_capabilities["version"] > CHROME_EXT_MAX_CHROME_VERSION:
-        #         raise ValueError("The testing suite only supports Chrome versions up to v%d, "
-        #                          "but v%d was specified. Please specify a lower version "
-        #                          "number." % (CHROME_EXT_MAX_CHROME_VERSION, desired_capabilities["version"]))
-        # else:
-        #     desired_capabilities["version"] = CHROME_EXT_MAX_CHROME_VERSION
+        if desired_capabilities["version"] > CHROME_EXT_MAX_CHROME_VERSION:
+            # Add new chrome extension to capabilities.
+            options = chrome.options.Options()
+            options.add_extension(os.path.join(_EXTENSIONS_DIR, _CHROME_APP_FNAME))
+            desired_capabilities.update(options.to_capabilities())
+            desired_capabilities.update(_capabilities)
+        else:
+            raise ValueError("The testing suite only supports Chrome versions greater than v%d, "
+                            "but v%d was specified. Please specify a higher version number."
+                            % (CHROME_EXT_MAX_CHROME_VERSION, desired_capabilities["version"]))
 
     elif browser_name == "firefox":
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
