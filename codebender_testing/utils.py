@@ -101,6 +101,8 @@ def read_last_log(compile_type):
         logs_re = re.compile(r'.+libraries_test.+')
     elif compile_type == 'fetch':
         logs_re = re.compile(r'.+libraries_fetch.+')
+    elif compile_type == 'target_library':
+        logs_re = re.compile(r'.+target_libraries.+')
 
     logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
 
