@@ -95,6 +95,11 @@ TIMEOUT = {
 DEFAULT_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
 TESTS_USER_AGENT = os.getenv('SELENIUM_USER_AGENT', DEFAULT_USER_AGENT)
 
+DEFAULT_USER_AGENT_CHROME = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36'
+TESTS_USER_AGENT_CHROME = os.getenv('SELENIUM_USER_AGENT_CHROME', DEFAULT_USER_AGENT_CHROME)
+
+BROWSER = "firefox"
+
 # Set up Selenium Webdrivers to be used for selenium tests.
 def _get_firefox_profile():
     """Returns the Firefox profile to be used for the FF webdriver.
@@ -140,12 +145,14 @@ def create_webdriver(command_executor, desired_capabilities):
     browser_profile_path = None
 
     if browser_name == "chrome":
+        BROWSER = "chrome"
         desired_capabilities = DesiredCapabilities.CHROME.copy()
         desired_capabilities.update(_capabilities)
         if desired_capabilities["version"] > CHROME_EXT_MAX_CHROME_VERSION:
             # Add new chrome extension to capabilities.
             options = chrome.options.Options()
             options.add_extension(os.path.join(_EXTENSIONS_DIR, _CHROME_APP_FNAME))
+            options.add_argument("--user-agent=" + TESTS_USER_AGENT_CHROME)
             desired_capabilities.update(options.to_capabilities())
             desired_capabilities.update(_capabilities)
         else:
@@ -154,6 +161,7 @@ def create_webdriver(command_executor, desired_capabilities):
                             % (CHROME_EXT_MAX_CHROME_VERSION, desired_capabilities["version"]))
 
     elif browser_name == "firefox":
+        BROWSER = "firefox"
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
         desired_capabilities.update(_capabilities)
         browser_profile = _get_firefox_profile()

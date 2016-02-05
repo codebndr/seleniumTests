@@ -2,9 +2,10 @@ from selenium.webdriver.common.by import By
 import pytest
 
 from codebender_testing.config import TESTS_USER_AGENT
+from codebender_testing.config import TESTS_USER_AGENT_CHROME
+from codebender_testing.config import BROWSER
 from codebender_testing.utils import SeleniumTestCase
 from codebender_testing.utils import SELECT_BOARD_SCRIPT
-
 
 TEST_BOARD = 'Arduino Uno'
 
@@ -28,12 +29,20 @@ class TestUserHome(SeleniumTestCase):
 
     def test_page_3(self):
         """Test page 3"""
-        if 'Linux' in TESTS_USER_AGENT:
-            self.get_element(By.CSS_SELECTOR, '#linux-directions .btn:nth-child(2)').click()
-        elif 'Windows' in TESTS_USER_AGENT:
-            self.get_element(By.CSS_SELECTOR, '#windows-directions .btn:nth-child(2)').click()
-        elif 'Mac' in TESTS_USER_AGENT:
-            self.get_element(By.CSS_SELECTOR, '#mac-directions .btn:nth-child(2)').click()
+        if BROWSER == "firefox":
+            if 'Linux' in TESTS_USER_AGENT:
+                self.get_element(By.CSS_SELECTOR, '#linux-directions .btn:nth-child(2)').click()
+            elif 'Windows' in TESTS_USER_AGENT:
+                self.get_element(By.CSS_SELECTOR, '#windows-directions .btn:nth-child(2)').click()
+            elif 'Mac' in TESTS_USER_AGENT:
+                self.get_element(By.CSS_SELECTOR, '#mac-directions .btn:nth-child(2)').click()
+        elif BROWSER == "chrome":
+            if 'Linux' in TESTS_USER_AGENT_CHROME:
+                self.get_element(By.CSS_SELECTOR, '#linux-directions .btn:nth-child(2)').click()
+            elif 'Windows' in TESTS_USER_AGENT_CHROME:
+                self.get_element(By.CSS_SELECTOR, '#windows-directions .btn:nth-child(2)').click()
+            elif 'Mac' in TESTS_USER_AGENT_CHROME:
+                self.get_element(By.CSS_SELECTOR, '#mac-directions .btn:nth-child(2)').click()
 
     def test_page_4(self):
         """Test page 4"""
