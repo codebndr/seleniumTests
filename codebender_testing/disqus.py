@@ -12,8 +12,8 @@ import os
 import re
 
 
-FORUM = 'codebender-cc'
-AUTHOR_URL = 'https://codebender.cc/user/codebender'
+FORUM = os.getenv('DISQUS_FORUM', 'codebender-cc')
+AUTHOR_URL = os.getenv('AUTHOR_URL', 'https://codebender.cc/user/codebender')
 DISQUS_REQUESTS_PER_HOUR = 1000
 DISQUS_WAIT = (DISQUS_REQUESTS_PER_HOUR / 60) / 60
 CHANGE_LOG = 'examples_compile_log.json'
