@@ -111,7 +111,7 @@ class DisqusWrapper:
         return log
 
     def handle_example_comment(self, url, results, current_date, log):
-        identifier = url.replace('https://codebender.cc', '')
+        identifier = re.sub(r'https*://.*codebender.cc', '', url)
         identifier = 'ident:' + identifier
         try:
             log[url]['comment'] = False
