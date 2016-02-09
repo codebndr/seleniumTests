@@ -552,7 +552,7 @@ class CodebenderSeleniumBot(object):
 
         urls_visited = {}
         last_log = read_last_log(compile_type)
-        if last_log['log']:
+        if compile_type != 'target_library' and last_log['log']:
             # resume previous compile
             log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
             log_entry = last_log['log']
@@ -650,7 +650,7 @@ class CodebenderSeleniumBot(object):
                 return
 
         # Generate a report if requested
-        if create_report:
+        if compile_type != 'target_library' and create_report:
             report_creator(compile_type, log_entry, log_file)
         print '\nTest duration:', int(toc - tic), 'sec'
 
