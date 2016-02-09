@@ -176,7 +176,6 @@ class DisqusWrapper:
             self.last_post = message
         elif re.match(r'^.+\.$', self.last_post):
             message = message[:-1]
-        self.last_post = message
 
         comment_status = False
 
@@ -189,6 +188,7 @@ class DisqusWrapper:
                                                 thread=response[0]['id'],
                                                 message=message, method='POST')
             if response['raw_message'] == message:
+                self.last_post = message
                 comment_status = True
         except Exception as error:
             print 'Error:', error
@@ -200,7 +200,6 @@ class DisqusWrapper:
             self.last_post = message
         elif re.match(r'^.+\.$', self.last_post):
             message = message[:-1]
-        self.last_post = message
 
         comment_status = False
 
@@ -211,6 +210,7 @@ class DisqusWrapper:
                                                 post=post_id,
                                                 message=message, method='POST')
             if response['raw_message'] == message:
+                self.last_post = message
                 comment_status = True
         except Exception as error:
             print 'Error:', error
