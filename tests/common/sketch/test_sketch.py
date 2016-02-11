@@ -54,13 +54,11 @@ class TestSketch(SeleniumTestCase):
 
         assert boards_dropdown.first_selected_option.text == TEST_BOARD
 
-    @pytest.mark.requires_extension
     def test_ports_dropdown(self):
         """Tests that the ports dropdown exists."""
         ports = self.get_element(By.ID, "cb_cf_ports")
         assert ports.text == 'No ports detected'
 
-    @pytest.mark.requires_extension
     def test_run_with_no_port(self):
         """Makes sure that there is an error when we attempt to run with no
         port selected."""
@@ -72,13 +70,11 @@ class TestSketch(SeleniumTestCase):
             )
         )
 
-    @pytest.mark.requires_extension
     def test_speeds_dropdown(self):
         """Tests that the speeds dropdown exists."""
         self.get_element(By.ID, "serial_monitor_toggle").click()
         self.get_element(By.ID, "cb_cf_baud_rates")
 
-    @pytest.mark.requires_extension
     def test_serial_monitor_disables_fields(self):
         """Tests that opening the serial monitor disables the port and baudrate
         fields."""
