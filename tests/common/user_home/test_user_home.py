@@ -3,8 +3,6 @@ import pytest
 
 from codebender_testing.config import TEST_DATA_INO
 from codebender_testing.config import TEST_DATA_ZIP
-from codebender_testing.config import SOURCE_BACHELOR
-from codebender_testing.config import SOURCE_CODEBENDER_CC
 from codebender_testing.utils import SeleniumTestCase
 
 
@@ -18,45 +16,6 @@ class TestUserHome(SeleniumTestCase):
         """Makes sure we are logged in and are at the user home page
         performing any of these tests."""
         pass
-
-    @pytest.mark.requires_source(SOURCE_BACHELOR)
-    def test_create_project_blank_name(self):
-        """Test that we get an error when creating a project with no name."""
-        create_button = self.get_element(By.CSS_SELECTOR, '.form-search button')
-        create_button.click()
-        error_heading = self.get_element(By.CSS_SELECTOR, '.alert h4')
-        assert error_heading.text.startswith('Error')
-
-    @pytest.mark.requires_source(SOURCE_BACHELOR)
-    def test_create_project_invalid_name(self):
-        """Test that we get an error when creating a project with an
-        invalid name (e.g., a name containing a backslash).
-        """
-        project_name_input = self.get_element(By.CSS_SELECTOR,
-                                              '.form-search input[type=text]')
-        project_name_input.clear()
-        project_name_input.send_keys('foo\\bar')
-        create_button = self.get_element(By.CSS_SELECTOR, '.form-search button')
-        create_button.click()
-
-        error_heading = self.get_element(By.CSS_SELECTOR, '.alert h4')
-        assert error_heading.text.startswith('Error')
-
-    @pytest.mark.requires_source(SOURCE_BACHELOR)
-    def test_create_project_valid_name(self):
-        """Test that we can successfully create a project with a valid name."""
-        project_name_input = self.get_element(By.CSS_SELECTOR,
-                                              '.form-search input[type=text]')
-        project_name_input.clear()
-        project_name_input.send_keys(NEW_PROJECT_NAME)
-        create_button = self.get_element(By.CSS_SELECTOR, '.form-search button')
-        create_button.click()
-
-        project_heading = self.get_element(By.ID, 'editor_heading_project_name')
-        assert project_heading.text == NEW_PROJECT_NAME
-
-        # Cleanup: delete the project we just created.
-        self.delete_project(NEW_PROJECT_NAME)
 
     def _upload_test(self, dropzone_selector, test_fname, sketch_name=None):
         """Tests that we can successfully upload `test_fname`.
@@ -72,12 +31,10 @@ class TestUserHome(SeleniumTestCase):
         finally:
             self.delete_project(upload_name)
 
-    @pytest.mark.requires_source(SOURCE_CODEBENDER_CC)
     def test_upload_project_ino(self):
         """Tests that we can upload a .ino file."""
         self._upload_test('#uploadInoModal form', TEST_DATA_INO)
 
-    @pytest.mark.requires_source(SOURCE_CODEBENDER_CC)
     def test_upload_project_zip(self):
         """Tests that we can successfully upload a zipped project."""
         # TODO: how is the project name inferred from the zip file?

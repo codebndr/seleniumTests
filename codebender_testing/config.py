@@ -30,10 +30,6 @@ BASE_URL = "http://localhost"
 LIVE_SITE_URL = "https://codebender.cc"
 STAGING_SITE_URL = "https://staging.codebender.cc"
 
-# Names of sources (i.e. repositories) used to generate the codebender site.
-SOURCE_BACHELOR = 'bachelor'
-SOURCE_CODEBENDER_CC = 'codebender_cc'
-
 # User whose projects we'd like to compile in our compile_tester
 # test case(s).
 COMPILE_TESTER_URL = "/user/cb_compile_tester"
@@ -79,12 +75,6 @@ TEST_DATA_ZIP = os.path.join(TEST_DATA_DIR, 'upload_zip.zip')
 
 # Directory in which the local compile tester files are stored.
 COMPILE_TESTER_DIR = os.path.join(TEST_DATA_DIR, 'cb_compile_tester')
-
-# Credentials to use when logging into the bachelor site.
-TEST_CREDENTIALS = {
-    "username": "tester",
-    "password": "testerPASS"
-}
 
 TEST_PROJECT_NAME = "test_project"
 

@@ -23,7 +23,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from codebender_testing.config import BASE_URL
 from codebender_testing.config import TIMEOUT
-from codebender_testing.config import TEST_CREDENTIALS
 from codebender_testing.config import TEST_PROJECT_NAME
 from codebender_testing.config import get_path
 from codebender_testing.config import jsondump
@@ -312,8 +311,6 @@ class CodebenderSeleniumBot(object):
         unspecified location when calling this function.
         `credentials` should be a dict with keys 'username' and 'password',
         mapped to the appropriate values."""
-        if credentials is None:
-            credentials = TEST_CREDENTIALS
         try:
             self.open()
             login_button = self.driver.find_element_by_id('login_btn')
@@ -495,9 +492,7 @@ class CodebenderSeleniumBot(object):
             try:
                 self.execute_script(SELECT_BOARD_SCRIPT(board), '$', 'compilerflasher.pluginHandler.plugin_found')
                 self.execute_script(_VERIFY_SCRIPT, 'compilerflasher')
-                # In the BACHELOR site the id is 'operation_output', but in the live
-                # site the id is 'cb_cf_operation_output'. The [id$=operation_output]
-                # here selects an id that _ends_ with 'operation_output'.
+                # The [id$=operation_output] here selects an id that _ends_ with 'operation_output'.
                 compile_result = WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
                     any_text_to_be_present_in_element(
                         (By.CSS_SELECTOR, "[id$=operation_output]"),
