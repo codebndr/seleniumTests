@@ -114,3 +114,20 @@ def requires_url(request, testing_url):
         required_url = request.node.get_marker('requires_url').args[0]
         if required_url.rstrip('/') != testing_url.rstrip('/'):
             pytest.skip('skipped test that requires --url=%s' % required_url)
+
+@pytest.fixture(autouse=True)
+def does_not_require_extension(request, webdriver):
+    """Mark that a test doesn't require the codebender extension.
+    This marker is used so that we skip tests when running under chrome since
+    we have an unexpected behavior when the extension is not installed.
+    This functionality should be invoked as a pytest marker, e.g.:
+
+    ```
+    @pytest.mark.does_not_require_extension
+    def test_some_feature():
+        ...
+    ```
+    """
+    if request.node.get_marker('does_not_require_extension'):
+        if webdriver.desired_capabilities["browserName"] == "chrome":
+            pytest.skip("skipped test that does not require codebender extension.")

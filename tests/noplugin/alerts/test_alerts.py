@@ -16,6 +16,7 @@ class TestAlerts(SeleniumTestCase):
         performing any of these tests."""
         self.create_sketch(TEST_PROJECT_NAME)
 
+    @pytest.mark.does_not_require_extension
     def test_alert(self):
         operation_output = self.driver.find_element_by_id('operation_output')
         assert "To program your Arduino from your browser, install" \
@@ -24,6 +25,7 @@ class TestAlerts(SeleniumTestCase):
     def test_remove_sketch(self):
         self.delete_project(TEST_PROJECT_NAME)
 
+    @pytest.mark.does_not_require_extension
     def test_library_example(self, tester_logout):
         self.open('/libraries')
         library_example = """
@@ -40,6 +42,7 @@ class TestAlerts(SeleniumTestCase):
         if flash_btn.is_enabled():
             assert False
 
+    @pytest.mark.does_not_require_extension
     def test_embeded_view(self, tester_logout):
         self.open('/embed/microview_test')
         output = self.driver.find_element_by_id('cb_cf_operation_output')
@@ -49,12 +52,14 @@ class TestAlerts(SeleniumTestCase):
         if microview_test.is_enabled():
             assert False
 
+    @pytest.mark.does_not_require_extension
     def test_walkthrough_page_2(self, tester_logout):
         self.open('/static/walkthrough/page/2')
         output = self.driver.find_element_by_id('cb_cf_operation_output')
         assert "To program your Arduino from your browser, install" \
         " the codebender plugin." in output.text
 
+    @pytest.mark.does_not_require_extension
     def test_walkthrough_page_3(self, tester_logout):
         self.open('/static/walkthrough/page/3')
         WebDriverWait(self.driver, TIMEOUT).until(
@@ -66,7 +71,7 @@ class TestAlerts(SeleniumTestCase):
         current_url = urlparse(self.driver.current_url)
         assert current_url.path == '/static/walkthrough/page/2'
 
-
+    @pytest.mark.does_not_require_extension
     def test_walkthrough_page_4(self, tester_logout):
         self.open('/static/walkthrough/page/4')
         WebDriverWait(self.driver, TIMEOUT).until(
