@@ -66,7 +66,9 @@ class TestUserHome(SeleniumTestCase):
         """
         try:
             upload_name = self.upload_project(dropzone_selector, test_fname, sketch_name)
-            assert upload_name in self.driver.page_source
+            selector = '#project_list li[data-name="'+ str(upload_name.lower()) +'"]'
+            project_uploaded = self.get_element(By.CSS_SELECTOR, selector).text.split('\n')[0]
+            assert upload_name == project_uploaded
         finally:
             self.delete_project(upload_name)
 
