@@ -334,6 +334,7 @@ class CodebenderSeleniumBot(object):
         try:
             logout_button = self.driver.find_element_by_id("logout")
             logout_button.send_keys(Keys.ENTER)
+            self.get_element(By.CSS_SELECTOR, '#login_btn')
         except NoSuchElementException:
             # 'Log out' is not displayed, so we're already logged out.
             pass
