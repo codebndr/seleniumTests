@@ -12,8 +12,8 @@ import os
 import re
 
 
-FORUM = 'codebender-cc'
-AUTHOR_URL = 'https://codebender.cc/user/codebender'
+FORUM = os.getenv('DISQUS_FORUM', 'codebender-cc')
+AUTHOR_URL = os.getenv('AUTHOR_URL', 'https://codebender.cc/user/codebender')
 DISQUS_REQUESTS_PER_HOUR = 1000
 DISQUS_WAIT = (DISQUS_REQUESTS_PER_HOUR / 60) / 60
 CHANGE_LOG = 'examples_compile_log.json'
@@ -111,7 +111,7 @@ class DisqusWrapper:
         return log
 
     def handle_example_comment(self, url, results, current_date, log):
-        identifier = url.replace('https://codebender.cc', '')
+        identifier = re.sub(r'https*://.*codebender.cc', '', url)
         identifier = 'ident:' + identifier
         try:
             log[url]['comment'] = False
@@ -176,7 +176,6 @@ class DisqusWrapper:
             self.last_post = message
         elif re.match(r'^.+\.$', self.last_post):
             message = message[:-1]
-        self.last_post = message
 
         comment_status = False
 
@@ -189,6 +188,7 @@ class DisqusWrapper:
                                                 thread=response[0]['id'],
                                                 message=message, method='POST')
             if response['raw_message'] == message:
+                self.last_post = message
                 comment_status = True
         except Exception as error:
             print 'Error:', error
@@ -200,7 +200,6 @@ class DisqusWrapper:
             self.last_post = message
         elif re.match(r'^.+\.$', self.last_post):
             message = message[:-1]
-        self.last_post = message
 
         comment_status = False
 
@@ -211,6 +210,7 @@ class DisqusWrapper:
                                                 post=post_id,
                                                 message=message, method='POST')
             if response['raw_message'] == message:
+                self.last_post = message
                 comment_status = True
         except Exception as error:
             print 'Error:', error

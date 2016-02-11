@@ -15,6 +15,9 @@ export DISQUS_API_PUBLIC=""
 export DISQUS_SSO_ID=""
 export DISQUS_SSO_USERNAME=""
 export DISQUS_SSO_EMAIL=""
+export DISQUS_FORUM=""
+
+export AUTHOR_URL=""
 
 export EMAIL=""
 
