@@ -66,7 +66,7 @@ _CHROME_APP_FNAME = 'chrome-app-1.0.0.8.zip'
 CHROME_EXT_MAX_CHROME_VERSION = 41
 
 # Path to YAML file specifying capability list.
-DEFAULT_CAPABILITIES_FILE = os.getenv('CAPABILITIES', 'capabilities.yaml')
+DEFAULT_CAPABILITIES_FILE = os.getenv('CAPABILITIES', 'capabilities_firefox.yaml')
 DEFAULT_CAPABILITIES_FILE_PATH = _rel_path(DEFAULT_CAPABILITIES_FILE)
 
 # Files used for testing.

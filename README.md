@@ -114,7 +114,7 @@ The most important class is `SeleniumTestCase`, which all of the unit test cases
 inherit from. This grants them access (via `self`) to a number of methods and
 attributes that are useful for performing codebender-specific actions.
 
-**`codebender_testing/capabilities.yaml`** defines a list of `capabilities` to
+**`codebender_testing/capabilities_{firefox, chrome}.yaml`** defines a list of `capabilities` to
 be passed as arguments when instantiating remote webdrivers. In particular, it
 specifies the web browsers that we would like to use. Consult this file for more
 information.
@@ -141,4 +141,3 @@ compile.
 The `logs/` directory contains the results of running certain tests, e.g.
 whether certain sets of sketches have compiled successfully (see "Compilation
 Logs").
-

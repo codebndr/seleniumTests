@@ -6,7 +6,7 @@
 # See here for more on test configuration:
 #   https://docs.saucelabs.com/reference/test-configuration
 
-- browserName: "firefox"
-  version: 43
+- browserName: "chrome"
+  version: 47
   public: "public restricted"
   maxDuration: 10800
