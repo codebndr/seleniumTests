@@ -139,6 +139,9 @@ def create_webdriver(command_executor, desired_capabilities):
     # Fill in defaults from DesiredCapabilities.{CHROME,FIREFOX} if they are
     # missing from the desired_capabilities dict above.
     _capabilities = desired_capabilities
+    platform = os.getenv('SELENIUM_PLATFORM', None)
+    if platform:
+        _capabilities['platform'] = platform
     browser_profile = None
     browser_profile_path = None
 
@@ -146,7 +149,6 @@ def create_webdriver(command_executor, desired_capabilities):
 
     if browser_name == "chrome":
         desired_capabilities = DesiredCapabilities.CHROME.copy()
-        desired_capabilities.update(_capabilities)
         options = chrome.options.Options()
         browser_profile_path = os.path.join('/tmp', _get_chrome_profile())
         options.add_argument('--user-data-dir=' + browser_profile_path)
