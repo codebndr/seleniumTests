@@ -151,7 +151,6 @@ def create_webdriver(command_executor, desired_capabilities):
                             % (CHROME_EXT_MAX_CHROME_VERSION, desired_capabilities["version"]))
 
     elif browser_name == "firefox":
-        BROWSER = "firefox"
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
         desired_capabilities.update(_capabilities)
         browser_profile = _get_firefox_profile()
