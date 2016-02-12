@@ -97,17 +97,17 @@ elif [ "${walkthrough}" -eq 1 ]; then
     IDENTIFIER="walkthrough"
     RETVALS=()
     # Linux
-    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36'
+    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36 codebender-selenium'
     export SELENIUM_USER_AGENT='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
     tox tests/walkthrough -- --url=${URL} --plugin
     RETVALS+=($?)
     # Windows
-    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36'
+    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36 codebender-selenium'
     export SELENIUM_USER_AGENT='Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
     tox tests/walkthrough -- --url=${URL} --plugin
     RETVALS+=($?)
     # MacOSX
-    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36'
+    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36 codebender-selenium'
     export SELENIUM_USER_AGENT='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
     tox tests/walkthrough -- --url=${URL} --plugin
     RETVALS+=($?)
