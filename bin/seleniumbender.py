@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+import ConfigParser
 import argparse
 import os
 import re
 import subprocess
 import sys
 import time
+import yaml
 
 SHELL='/bin/bash'
 SOURCE = 'codebender_cc'
@@ -39,19 +41,17 @@ class Tests:
         elif operation == 'staging':
             self.staging()
 
-    def run_command(self, command, user_agent=None):
-        if user_agent:
-            os.environ['SELENIUM_USER_AGENT'] = user_agent
+    def run_command(self, command):
         command = ' '.join(command)
         print('command:', command)
         return subprocess.call(command, shell=True, executable=SHELL)
 
     def send_mail_no_logs(self, identifier):
         command = ['mail', '-s', '"Selenium Tests: {identifier} Failed To Run" {email} <<< "Something went wrong with {identifier} tests. Please check the logs."'.format(identifier=identifier, email=self.email)]
-        run_command(command)
+        self.run_command(command)
 
     def send_mail_with_logs(self, identifier):
-        default_tests_dir = os.path.normpath(os.path.join(os.getcwd(), '..'))
+        default_tests_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
         root_dir = os.getenv('ROOTDIR', default_tests_dir)
 
         logs = os.path.join(root_dir, 'logs')
@@ -74,12 +74,12 @@ class Tests:
                 'uuencode "{reports}/{reportfile}" "{reportfile}")'.format(reports=reports, reportfile=reportfile),
                 '| mail -s "Selenium Tests Report: {identifier} {email_date} Changes: {changes}" {email}'.format(identifier=identifier, email_date=email_date, changes=changes, email=self.email)
             ]
-            run_command(command)
+            self.run_command(command)
         except:
             pass
 
     def create_command(self, test_directory, *extra_arguments):
-        return ['tox', 'tests/' + test_directory, '--', '--url={}'.format(TARGETS[self.url]), '--source={}'.format(SOURCE)] + list(extra_arguments)
+        return ['tox', 'tests/' + test_directory, '--', '--url={}'.format(TARGETS[self.url])] + list(extra_arguments)
 
     def common(self, identifier='common'):
         command = self.create_command('common', '--plugin')
@@ -115,14 +115,16 @@ class Tests:
     def walkthrough(self, identifier='walkthrough'):
         command = self.create_command('walkthrough', '--plugin')
         retvals = []
-        user_agents = [
-            'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium',
-            'Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
-        ]
-        for user_agent in user_agents:
-            retval = self.run_command(command, user_agent=user_agent)
+        for platform in USER_AGENTS.keys():
+            for browser in USER_AGENTS[platform].keys():
+                if browser == 'chrome':
+                    os.environ['SELENIUM_USER_AGENT_CHROME'] = USER_AGENTS[platform][browser]
+                elif browser == 'firefox':
+                    os.environ['SELENIUM_USER_AGENT_FIREFOX'] = USER_AGENTS[platform][browser]
+            os.environ['SELENIUM_PLATFORM'] = platform
+            retval = self.run_command(command)
             retvals.append(retval)
+
         retval = max(retvals)
         if retval != 0:
             self.send_mail_no_logs(identifier)
@@ -148,6 +150,35 @@ TARGETS = {
     'local': 'http://dev.codebender.cc'
 }
 
+PLATFORMS = {
+    'Linux': 'X11; Ubuntu; Linux x86_64',
+    'Windows 7': 'Windows NT 6.1',
+    'OS X 10.11': 'Macintosh; Intel Mac OS X 10_11_1'
+}
+USER_AGENTS = {}
+USER_AGENT_IDENTIFIER = 'codebender-selenium'
+
+def generate_user_agents(file_path):
+    with open(file_path, 'rb') as fp:
+        capabilities_file = yaml.load(fp)
+    for section in capabilities_file:
+        browser = section['browserName']
+        for platform in PLATFORMS.keys():
+            if platform == 'Linux':
+                os.environ['SELENIUM_PLATFORM'] = platform
+            version = section['version']
+            if browser == 'chrome':
+                user_agent = 'Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version}.0.2564.109 Safari/537.36 {identifier}'.format(platform=PLATFORMS[platform], version=version, identifier=USER_AGENT_IDENTIFIER)
+                if platform == 'Linux':
+                    os.environ['SELENIUM_USER_AGENT_CHROME'] = user_agent
+            elif browser == 'firefox':
+                user_agent = 'Mozilla/5.0 ({platform}; rv:{version}.0) Gecko/20100101 Firefox/{version}.0 {identifier}'.format(platform=PLATFORMS[platform], version=version, identifier=USER_AGENT_IDENTIFIER)
+                if platform == 'Linux':
+                    os.environ['SELENIUM_USER_AGENT'] = user_agent
+
+            USER_AGENTS.setdefault(platform, {})
+            USER_AGENTS[platform][browser] = user_agent
+
 def main():
     available_operations = ['{operation}\t{description}'.format(operation=x, description=OPERATIONS[x]) for x in sorted(OPERATIONS.keys())]
     available_targets = ['{target}\t{url}'.format(target=x, url=TARGETS[x]) for x in sorted(TARGETS.keys())]
@@ -161,7 +192,7 @@ def main():
                         default='live',
                         help='Target site for the tests.\nAvailable targets (default: live):\n\t{targets}'.format(targets='\n\t'.join(available_targets)))
     parser.add_argument('--config',
-                        default='env_vars.sh',
+                        default='config.cfg',
                         help='Configuration file to load (default: config.cfg).')
     parser.add_argument('--libraries',
                         default=None,
@@ -170,6 +201,9 @@ def main():
                         action='store_true',
                         default=False,
                         help='Use saucelabs as the Selenium server')
+    parser.add_argument('--capabilities',
+                        default='capabilities_firefox.yaml',
+                        help='Selenium capabilities file (default: capabilities_firefox.yaml).'.format())
 
     # Parse arguments
     args = parser.parse_args()
@@ -185,21 +219,50 @@ def main():
         parser.print_help()
         sys.exit()
 
-    config = args.config
-    if not os.path.exists(config):
-        print('Config file:', config, 'does not exist')
-        sys.exit()
-
     libraries = args.libraries
     if operation == 'target' and not libraries:
         print('No target libraries specified!\n')
         parser.print_help()
         sys.exit()
 
-    # Read environment variables file
-    output = subprocess.check_output('source {}; env'.format(config), shell=True, executable=SHELL)
-    env_vars = dict((line.split('=', 1) for line in output.splitlines()))
-    os.environ.update(env_vars)
+    config = args.config
+    if not os.path.exists(config):
+        print('Config file:', config, 'does not exist')
+        sys.exit()
+
+    # Read config file
+    config_parser = ConfigParser.RawConfigParser()
+    config_parser.optionxform = str
+    sections = ['common', target]
+    try:
+        config_parser.read(config)
+        for section in sections:
+            options = config_parser.options(section)
+            for option in options:
+                value = config_parser.get(section, option)
+                if option == 'SAUCELABS_HUB_URL':
+                    saucelabs_user = os.environ['SAUCELABS_USER']
+                    saucelabs_key = os.environ['SAUCELABS_KEY']
+                    value = value.replace('SAUCELABS_USER', saucelabs_user)
+                    value = value.replace('SAUCELABS_KEY', saucelabs_key)
+                os.environ[option] = value
+    except:
+        print('Error parsing config file:', config)
+        print('Please check the config.cfg.template for the required format')
+        sys.exit()
+
+    if args.saucelabs:
+        os.environ['CODEBENDER_SELENIUM_HUB_URL'] = os.environ['SAUCELABS_HUB_URL']
+    else:
+        os.environ['CODEBENDER_SELENIUM_HUB_URL'] = os.environ['LOCAL_HUB_URL']
+
+    capabilities = args.capabilities
+    if capabilities:
+        os.environ['CAPABILITIES'] = capabilities
+
+    # Generate User agents
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'codebender_testing', capabilities)
+    generate_user_agents(file_path)
 
     # Run tests
     tests = Tests(target, config)
