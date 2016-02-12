@@ -251,10 +251,9 @@ def main():
         print('Please check the config.cfg.template for the required format')
         sys.exit()
 
+    os.environ['CODEBENDER_SELENIUM_HUB_URL'] = os.environ['LOCAL_HUB_URL']
     if args.saucelabs:
         os.environ['CODEBENDER_SELENIUM_HUB_URL'] = os.environ['SAUCELABS_HUB_URL']
-    else:
-        os.environ['CODEBENDER_SELENIUM_HUB_URL'] = os.environ['LOCAL_HUB_URL']
 
     capabilities = args.capabilities
     if capabilities:
