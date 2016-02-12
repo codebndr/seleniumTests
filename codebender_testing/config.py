@@ -6,7 +6,8 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import yaml
 import simplejson
 import pytest
-
+import string
+import random
 
 def _rel_path(*args):
     """Returns a path relative to config.py file's directory."""
@@ -103,6 +104,12 @@ def _get_firefox_profile():
         )
     return firefox_profile
 
+def _get_chrome_profile():
+    """Returns the Chrome profile directory to be used for the Chrome webdriver."""
+    seed = string.ascii_letters + string.digits
+    profile_hash = ''.join(random.choice(seed) for x in range(6))
+    return '.org.chromium.Chromium.' + profile_hash
+
 def get_browsers(capabilities_file_path=None):
     """Returns a list of capabilities. Each item in the list will cause
     the entire suite of tests to be re-run for a browser with those
@@ -138,17 +145,19 @@ def create_webdriver(command_executor, desired_capabilities):
         BROWSER = "chrome"
         desired_capabilities = DesiredCapabilities.CHROME.copy()
         desired_capabilities.update(_capabilities)
+        options = chrome.options.Options()
+        browser_profile_path = os.path.join('/tmp', _get_chrome_profile())
+        options.add_argument('--user-data-dir=' + browser_profile_path)
         if desired_capabilities["version"] > CHROME_EXT_MAX_CHROME_VERSION:
             # Add new chrome extension to capabilities.
-            options = chrome.options.Options()
             options.add_extension(os.path.join(_EXTENSIONS_DIR, _CHROME_APP_FNAME))
             options.add_argument("--user-agent=" + TESTS_USER_AGENT_CHROME)
-            desired_capabilities.update(options.to_capabilities())
-            desired_capabilities.update(_capabilities)
         else:
             raise ValueError("The testing suite only supports Chrome versions greater than v%d, "
                             "but v%d was specified. Please specify a higher version number."
                             % (CHROME_EXT_MAX_CHROME_VERSION, desired_capabilities["version"]))
+        desired_capabilities.update(options.to_capabilities())
+        desired_capabilities.update(_capabilities)
 
     elif browser_name == "firefox":
         desired_capabilities = DesiredCapabilities.FIREFOX.copy()
@@ -159,6 +168,7 @@ def create_webdriver(command_executor, desired_capabilities):
         desired_capabilities["firefox_profile"] = browser_profile.update_preferences()
     else:
         raise ValueError("Invalid webdriver %s (only chrome and firefox are supported)" % browser_name)
+
     return {
         'driver': webdriver.Remote(
             command_executor=command_executor,
