@@ -11,11 +11,9 @@ import time
 import yaml
 
 SHELL='/bin/bash'
-SOURCE = 'codebender_cc'
 
 class Tests:
     def __init__(self, url, environment):
-        self.source=SOURCE
         self.url = url
         self.environment = os.path.abspath(environment)
         self.email = os.getenv('EMAIL', 'void@mail.0')
