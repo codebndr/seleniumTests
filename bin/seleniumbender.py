@@ -232,9 +232,8 @@ def main():
     try:
         config_parser.read(config)
         for section in sections:
-            options = config_parser.options(section)
-            for option in options:
-                value = config_parser.get(section, option)
+            options = config_parser.items(section)
+            for option, value in options:
                 if option == 'SAUCELABS_HUB_URL':
                     saucelabs_user = os.environ['SAUCELABS_USER']
                     saucelabs_key = os.environ['SAUCELABS_KEY']
