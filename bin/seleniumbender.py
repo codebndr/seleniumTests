@@ -117,10 +117,7 @@ class Tests:
         retvals = []
         for platform in USER_AGENTS.keys():
             for browser in USER_AGENTS[platform].keys():
-                if browser == 'chrome':
-                    os.environ['SELENIUM_USER_AGENT_CHROME'] = USER_AGENTS[platform][browser]
-                elif browser == 'firefox':
-                    os.environ['SELENIUM_USER_AGENT_FIREFOX'] = USER_AGENTS[platform][browser]
+                os.environ['SELENIUM_USER_AGENT_' + browser.upper()] = USER_AGENTS[platform][browser]
             os.environ['SELENIUM_PLATFORM'] = platform
             retval = self.run_command(command)
             retvals.append(retval)
