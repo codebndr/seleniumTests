@@ -24,11 +24,6 @@ def pytest_addoption(parser):
                      help="Run the complete set of compile tests "
                           "(a minimal set of tests is run by default).")
 
-    parser.addoption("-S", "--source", action="store", default=config.SOURCE_BACHELOR,
-                     help="Indicate the source used to generate the repo. "
-                          "By default, we assume `bachelor`. "
-                          "You can instead use `codebender_cc` for the live site.")
-
     parser.addoption("-C", "--capabilities", action="store",
                      default=config.DEFAULT_CAPABILITIES_FILE_PATH,
                      help="Custom path to a YAML file containing a capability list.")
@@ -85,24 +80,14 @@ def testing_url(request):
     """A fixture to get the --url parameter."""
     return request.config.getoption("--url")
 
-
-@pytest.fixture(scope="class")
-def source(request):
-    """A fixture to specify the source repository from which the site was
-    derived (e.g. bachelor or codebender_cc)
-    """
-    return request.config.getoption("--source")
-
-
 @pytest.fixture(scope="class")
 def testing_credentials(request):
     """A fixture to get testing credentials specified via the environment
-    variables CODEBENDER_TEST_USER and CODEBENDER_TEST_PASS. Defaults to the
-    credentials specified in config.TEST_CREDENTIALS.
+    variables CODEBENDER_TEST_USER and CODEBENDER_TEST_PASS.
     """
     return {
-        'username': os.environ.get('CODEBENDER_TEST_USER', config.TEST_CREDENTIALS['username']),
-        'password': os.environ.get('CODEBENDER_TEST_PASS', config.TEST_CREDENTIALS['password']),
+        'username': os.environ.get('CODEBENDER_TEST_USER'),
+        'password': os.environ.get('CODEBENDER_TEST_PASS'),
     }
 
 
@@ -110,26 +95,6 @@ def testing_credentials(request):
 def testing_full(request):
     """A fixture to get the --full parameter."""
     return request.config.getoption("--full")
-
-
-@pytest.fixture(autouse=True)
-def requires_source(request, source):
-    """Skips tests that require a certain source version (e.g. bachelor or
-    codebender_cc) in order to run properly.
-
-    This functionality should be invoked as a pytest marker, e.g.:
-
-    ```
-    @pytest.mark.requires_source("bachelor")
-    def test_some_feature():
-        ...
-    ```
-    """
-    if request.node.get_marker('requires_source'):
-        required_source = request.node.get_marker('requires_source').args[0]
-        if required_source != source:
-            pytest.skip('skipped test that requires --source=' + source)
-
 
 @pytest.fixture(autouse=True)
 def requires_url(request, testing_url):
@@ -150,25 +115,19 @@ def requires_url(request, testing_url):
         if required_url.rstrip('/') != testing_url.rstrip('/'):
             pytest.skip('skipped test that requires --url=%s' % required_url)
 
-
 @pytest.fixture(autouse=True)
-def requires_extension(request, webdriver):
-    """Mark that a test requires the codebender extension.
-    Ideally, this marker would not be necessary. However, it is used so that we
-    skip tests when running under chrome that require the extension (for now).
-    This is due to the fact that the chrome driver leaves open the
-    "confirm extension" dialogue without actually installing it.
-
-     This functionality should be invoked as a pytest marker, e.g.:
+def does_not_require_extension(request, webdriver):
+    """Mark that a test doesn't require the codebender extension.
+    This marker is used so that we skip tests when running under chrome since
+    we have an unexpected behavior when the extension is not installed.
+    This functionality should be invoked as a pytest marker, e.g.:
 
     ```
-    @pytest.mark.requires_extension
+    @pytest.mark.does_not_require_extension
     def test_some_feature():
         ...
     ```
     """
-    if request.node.get_marker('requires_extension'):
+    if request.node.get_marker('does_not_require_extension'):
         if webdriver.desired_capabilities["browserName"] == "chrome":
-            pytest.skip("skipped test that requires codebender extension. "
-                        "The current webdriver is Chrome, and the ChromeDriver "
-                        "does not properly install extensions.")
+            pytest.skip("skipped test that does not require codebender extension.")

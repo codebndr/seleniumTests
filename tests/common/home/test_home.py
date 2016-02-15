@@ -13,8 +13,8 @@ class TestHome(SeleniumTestCase):
 
     def test_login(self, tester_logout):
         credentials = {
-            'username': os.environ.get('CODEBENDER_TEST_USER', config.TEST_CREDENTIALS['username']),
-            'password': os.environ.get('CODEBENDER_TEST_PASS', config.TEST_CREDENTIALS['password']),
+            'username': os.environ.get('CODEBENDER_TEST_USER'),
+            'password': os.environ.get('CODEBENDER_TEST_PASS'),
         }
         driver = self.driver
         self.open("/")

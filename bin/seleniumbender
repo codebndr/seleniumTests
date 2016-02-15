@@ -64,7 +64,6 @@ done
 cd ..
 
 URL="https://codebender.cc"
-SOURCE="codebender_cc"
 
 email_date=$(date +"%Y-%m-%d %H:%M:%S")
 
@@ -73,40 +72,43 @@ NO_LOGS=0 # flag for tests that do not send any logs on their email
 
 if [ "${target}" -eq 1 ]; then
     IDENTIFIER="test_target_libraries"
-    tox tests/target_libraries -- --url=${URL} --source=${SOURCE} -F --plugin --libraries=${TARGETS}
+    tox tests/target_libraries -- --url=${URL} -F --plugin --libraries=${TARGETS}
 elif [ "${examples}" -eq 1 ]; then
     IDENTIFIER="libraries_test"
-    tox tests/libraries -- --url=${URL} --source=${SOURCE} -F --plugin
+    tox tests/libraries -- --url=${URL} -F --plugin
 elif [ "${libraries}" -eq 1 ]; then
     IDENTIFIER="libraries_fetch"
-    tox tests/libraries_fetch -- --url=${URL} --source=${SOURCE} -F --plugin
+    tox tests/libraries_fetch -- --url=${URL} -F --plugin
 elif [ "${sketches}" -eq 1 ]; then
     IDENTIFIER="cb_compile_tester"
-    tox tests/compile_tester -- --url=${URL} --source=${SOURCE} -F --plugin
+    tox tests/compile_tester -- --url=${URL} -F --plugin
 elif [ "${common}" -eq 1 ]; then
     IDENTIFIER="common"
-    tox tests/common -- --url=${URL} --source=${SOURCE} --plugin
+    tox tests/common -- --url=${URL} --plugin
     RETVAL=$?
     NO_LOGS=1
 elif [ "${noplugin}" -eq 1 ]; then
     IDENTIFIER="noplugin"
-    tox tests/noplugin -- --url=${URL} --source=${SOURCE}
+    tox tests/noplugin -- --url=${URL}
     RETVAL=$?
     NO_LOGS=1
 elif [ "${walkthrough}" -eq 1 ]; then
     IDENTIFIER="walkthrough"
     RETVALS=()
     # Linux
+    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36 codebender-selenium'
     export SELENIUM_USER_AGENT='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
-    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    tox tests/walkthrough -- --url=${URL} --plugin
     RETVALS+=($?)
     # Windows
+    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36 codebender-selenium'
     export SELENIUM_USER_AGENT='Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
-    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    tox tests/walkthrough -- --url=${URL} --plugin
     RETVALS+=($?)
     # MacOSX
+    export SELENIUM_USER_AGENT_CHROME='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36 codebender-selenium'
     export SELENIUM_USER_AGENT='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
-    tox tests/walkthrough -- --url=${URL} --source=${SOURCE} --plugin
+    tox tests/walkthrough -- --url=${URL} --plugin
     RETVALS+=($?)
 
     for i in "${RETVALS[@]}"
@@ -119,7 +121,7 @@ elif [ "${walkthrough}" -eq 1 ]; then
 elif [ "${staging}" -eq 1 ]; then
     IDENTIFIER="cb_compile_tester_staging"
     URL="https://staging.codebender.cc"
-    tox tests/compile_tester -- --url=${URL} --source=${SOURCE} -F --plugin
+    tox tests/compile_tester -- --url=${URL} -F --plugin
     # No need to send email for tests in staging
     exit $?
 fi
