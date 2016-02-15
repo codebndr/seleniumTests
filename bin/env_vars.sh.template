@@ -1,10 +1,12 @@
 #!/bin/bash
 
-export CAPABILITIES='capabilities_firefox.yaml'
+export CAPABILITIES="capabilities_firefox.yaml"
 
 SAUCELABS_USER=""
 SAUCELABS_KEY=""
-export CODEBENDER_SELENIUM_HUB_URL=http://${SAUCELABS_USER}:${SAUCELABS_KEY}@ondemand.saucelabs.com:80/wd/hub
+export SAUCELABS_HUB_URL="http://${SAUCELABS_USER}:${SAUCELABS_KEY}@ondemand.saucelabs.com:80/wd/hub"
+export LOCAL_HUB_URL="http://127.0.0.1:4444/wd/hub"
+CODEBENDER_SELENIUM_HUB_URL=$LOCAL_HUB_URL
 
 export CODEBENDER_TEST_USER=""
 export CODEBENDER_TEST_PASS=""

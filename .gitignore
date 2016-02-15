@@ -1,6 +1,7 @@
 __pycache__/
 .cache/
 bin/env_vars.sh
+bin/config.cfg
 .tox
 *.pyc
 *.swp
