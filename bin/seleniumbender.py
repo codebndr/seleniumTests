@@ -95,7 +95,7 @@ class Tests:
         self.run_command(command)
         self.send_mail_with_logs(identifier)
 
-    def sketches(self, libraries, identifier='cb_compile_tester'):
+    def sketches(self, identifier='cb_compile_tester'):
         command = self.create_command('compile_tester', '-F', '--plugin')
         self.run_command(command)
         self.send_mail_with_logs(identifier)
