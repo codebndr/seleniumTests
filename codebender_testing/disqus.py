@@ -57,28 +57,28 @@ class DisqusWrapper:
         sig = hmac.HMAC(self.DISQUS_API_SECRET, '%s %s' % (message, timestamp), hashlib.sha1).hexdigest()
         return "{0} {1} {2}".format(message, sig, timestamp)
 
-    def update_comment(self, sketch, results, current_date, log_entry, openFailFlag, counter, total_sketches):
-        # Comment examples
-        if not openFailFlag:
-            log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
-
-        # Comment libraries when finished commenting the examples
+    def update_comment(self, sketch, results, current_date, log_entry, openFailFlag, total_sketches):
+        # Comment libraries
         library_match = re.match(r'.+\/example\/(.+)\/.+', sketch)
         library = None
+        library_to_comment = None
         if library_match:
             library = library_match.group(1)
         if not self.last_library:
             self.last_library = library
-
-        library_to_comment = None
-        if self.last_library and self.last_library not in self.examples_without_library and library != self.last_library:
-            library_to_comment = self.last_library
-        if library and library not in self.examples_without_library and counter >= total_sketches-1:
             library_to_comment = library
+
+        if library != self.last_library:
+            library_to_comment = library
+
         if library_to_comment:
             log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
 
         self.last_library = library
+
+        # Comment examples
+        if not openFailFlag:
+            log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
 
         return log_entry
 

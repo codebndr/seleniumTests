@@ -575,7 +575,7 @@ class CodebenderSeleniumBot(object):
         total_sketches = len(urls_to_visit)
         tic = time.time()
 
-        for counter, sketch in enumerate(urls_to_visit):
+        for sketch in urls_to_visit:
             # Read the boards map in case current sketch/example requires a special board configuration
             boards = BOARDS_DB['default_boards']
             url_fragments = urlparse(sketch)
@@ -629,7 +629,7 @@ class CodebenderSeleniumBot(object):
 
             # Update Disqus comments
             if compile_type in ['library', 'target_library'] and comment:
-                log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, counter, total_sketches)
+                log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
 
             # Dump the test results to `logfile`.
             with open(log_file, 'w') as f:
