@@ -38,6 +38,8 @@ class Tests:
             self.walkthrough()
         elif operation == 'staging':
             self.staging()
+        elif operation == 'delete':
+            self.delete()
 
     def run_command(self, command):
         command = ' '.join(command)
@@ -131,6 +133,10 @@ class Tests:
         command = self.create_command('compile_tester', '-F', '--plugin')
         self.run_command(command)
 
+    def delete(self):
+        command = self.create_command('delete_sketches')
+        self.run_command(command)
+
 OPERATIONS = {
     'common':'\tTest site common functionality',
     'libraries': 'Visit all libraries and their examples',
@@ -139,7 +145,8 @@ OPERATIONS = {
     'compile': '\tCompile specific examples',
     'noplugin': 'Run tests without app/plugin installed',
     'walkthrough': 'Run tests for walkthrough',
-    'staging': '\tRun tests for staging only'
+    'staging': '\tRun tests for staging only',
+    'delete': '\tDelete all sketches from test user'
 }
 
 TARGETS = {
