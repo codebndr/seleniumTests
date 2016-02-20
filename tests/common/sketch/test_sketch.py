@@ -4,15 +4,15 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 import pytest
 
-from codebender_testing.config import TEST_PROJECT_NAME
+from codebender_testing.config import TEST_PROJECT_NAME, TIMEOUT
 from codebender_testing.utils import SeleniumTestCase
 from codebender_testing.utils import SELECT_BOARD_SCRIPT
 from codebender_testing.utils import throttle_compile
 
 
 # How long to wait before we give up on trying to assess the result of commands
-VERIFY_TIMEOUT = 30
-FLASH_TIMEOUT = 30
+VERIFY_TIMEOUT = TIMEOUT['VERIFY']
+FLASH_TIMEOUT = TIMEOUT['FLASH']
 
 # Board to test for the dropdown selector.
 TEST_BOARD = "Arduino Fio"

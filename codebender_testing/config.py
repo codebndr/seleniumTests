@@ -81,7 +81,9 @@ TEST_PROJECT_NAME = "test_project"
 
 TIMEOUT = {
     'LOCATE_ELEMENT': 30,
-    'FLASH_FAIL': 30
+    'FLASH_FAIL': 30,
+    'VERIFY': 30,
+    'FLASH': 30,
 }
 
 DEFAULT_USER_AGENT_FIREFOX = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 codebender-selenium'
