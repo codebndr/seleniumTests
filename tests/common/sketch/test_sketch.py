@@ -87,6 +87,14 @@ class TestSketch(SeleniumTestCase):
             )
         )
 
+    def test_close_serial_monitor(self):
+        self.get_element(By.ID, 'serial_monitor_toggle').click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, 'serial_monitor')
+            )
+        )
+
     def test_clone_project(self):
         """Tests that clicking the 'Clone Project' link brings us to a new
         sketch with the title 'test_project clone'."""
