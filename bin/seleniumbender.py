@@ -21,9 +21,9 @@ class Tests:
             '.gitignore'
         ]
 
-    def run(self, operation, libraries=None):
+    def run(self, operation, test=None, libraries=None):
         if operation == 'common':
-            self.common()
+            self.common(test)
         elif operation == 'libraries':
             self.libraries()
         elif operation == 'examples':
@@ -79,8 +79,11 @@ class Tests:
     def create_command(self, test_directory, *extra_arguments):
         return ['tox', 'tests/' + test_directory, '--', '--url={}'.format(TARGETS[self.url])] + list(extra_arguments)
 
-    def common(self, identifier='common'):
-        command = self.create_command('common', '--plugin')
+    def common(self, test, identifier='common'):
+        test_directory = 'common'
+        if test:
+            test_directory = os.path.join(test_directory, test)
+        command = self.create_command(test_directory, '--plugin')
         retval = self.run_command(command)
         if retval != 0:
             self.send_mail_no_logs(identifier)
@@ -189,9 +192,12 @@ def main():
     parser.add_argument('--config',
                         default='config.cfg',
                         help='Configuration file to load (default: config.cfg).')
+    parser.add_argument('--test',
+                        default=None,
+                        help='Common test to run when using operation: common (default: all)')
     parser.add_argument('--libraries',
                         default=None,
-                        help='Libraries to test (comma separated machine names) when using option: target')
+                        help='Libraries to test (comma separated machine names) when using operation: target')
     parser.add_argument('--saucelabs',
                         action='store_true',
                         default=False,
@@ -213,6 +219,8 @@ def main():
         print('Unsupported target!\n')
         parser.print_help()
         sys.exit()
+
+    test = args.test
 
     libraries = args.libraries
     if operation == 'target' and not libraries:
@@ -258,7 +266,7 @@ def main():
 
     # Run tests
     tests = Tests(target, config)
-    tests.run(operation, libraries=libraries)
+    tests.run(operation, test=test, libraries=libraries)
 
 if __name__ == '__main__':
     main()
