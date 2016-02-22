@@ -619,7 +619,7 @@ class CodebenderSeleniumBot(object):
         if logfile:
             log_file = strftime(logfile, log_time)
 
-        return (urls_to_visit, log_entry, log_file, disqus_wrapper, current_date)
+        return (urls_to_visit, log_entry, log_file, log_time, current_date)
 
     def create_log (self, log_file, log_entry,compile_type):
         # Dump the test results to `log_file`.
