@@ -407,31 +407,8 @@ class CodebenderSeleniumBot(object):
         libraries = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector='.library_link'), '$')
         assert len(libraries) > 0
         examples_libraries = examples + libraries
-
-        log_time = gmtime()
-        log_file = strftime(logfile, log_time)
-        log_entry = {}
-
-        urls_visited = {}
-        last_log = read_last_log('fetch')
-        if last_log['log']:
-            # resume previous compile
-            log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
-            log_file = strftime(logfile, log_time)
-            log_entry = last_log['log']
-            for url in last_log['log']:
-                urls_visited[url] = True
-
-        urls_to_visit = []
-        for url in examples_libraries:
-            if url not in urls_visited:
-                urls_to_visit.append(url)
-
-        if len(urls_to_visit) == 0:
-            urls_to_visit = examples_libraries
-            log_entry = {}
-            log_time = gmtime()
-            log_file = strftime(logfile, log_time)
+        compile_type = 'fetch'
+        urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, examples_libraries)
 
         library_re = re.compile(r'^https://codebender.cc/library/.+$')
         example_re = re.compile(r'^https://codebender.cc/example/.+/.+$')
@@ -613,13 +590,11 @@ class CodebenderSeleniumBot(object):
             log_entry = {}
             log_time = gmtime()
 
-        current_date = strftime('%Y-%m-%d', log_time)
-
         """ If `logfile` has a value and is not `None` we create `log_file`."""
         if logfile:
             log_file = strftime(logfile, log_time)
 
-        return (urls_to_visit, log_entry, log_file, log_time, current_date)
+        return (urls_to_visit, log_entry, log_file, log_time)
 
     def create_log (self, log_file, log_entry,compile_type):
         # Dump the test results to `log_file`.
@@ -640,7 +615,7 @@ class CodebenderSeleniumBot(object):
         number of sketches compiled to 1.
         """
 
-        urls_to_visit, log_entry, log_file, log_time, current_date = self.resume_log(logfile, compile_type, sketches)
+        urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, sketches)
 
         # Initialize DisqusWrapper.
         disqus_wrapper = DisqusWrapper(log_time)
@@ -710,6 +685,7 @@ class CodebenderSeleniumBot(object):
             self.create_log(log_file,log_entry, compile_type)
 
             # Update Disqus comments.
+            current_date = strftime('%Y-%m-%d', log_time)
             if comment and compile_type in ['library', 'target_library']:
                 log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
 
