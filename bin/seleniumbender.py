@@ -21,9 +21,9 @@ class Tests:
             '.gitignore'
         ]
 
-    def run(self, operation, libraries=None):
+    def run(self, operation, test=None, libraries=None):
         if operation == 'common':
-            self.common()
+            self.common(test)
         elif operation == 'libraries':
             self.libraries()
         elif operation == 'examples':
@@ -38,6 +38,8 @@ class Tests:
             self.walkthrough()
         elif operation == 'staging':
             self.staging()
+        elif operation == 'delete':
+            self.delete()
 
     def run_command(self, command):
         command = ' '.join(command)
@@ -79,8 +81,11 @@ class Tests:
     def create_command(self, test_directory, *extra_arguments):
         return ['tox', 'tests/' + test_directory, '--', '--url={}'.format(TARGETS[self.url])] + list(extra_arguments)
 
-    def common(self, identifier='common'):
-        command = self.create_command('common', '--plugin')
+    def common(self, test, identifier='common'):
+        test_directory = 'common'
+        if test:
+            test_directory = os.path.join(test_directory, test)
+        command = self.create_command(test_directory, '--plugin')
         retval = self.run_command(command)
         if retval != 0:
             self.send_mail_no_logs(identifier)
@@ -128,6 +133,10 @@ class Tests:
         command = self.create_command('compile_tester', '-F', '--plugin')
         self.run_command(command)
 
+    def delete(self):
+        command = self.create_command('delete_sketches')
+        self.run_command(command)
+
 OPERATIONS = {
     'common':'\tTest site common functionality',
     'libraries': 'Visit all libraries and their examples',
@@ -136,7 +145,8 @@ OPERATIONS = {
     'compile': '\tCompile specific examples',
     'noplugin': 'Run tests without app/plugin installed',
     'walkthrough': 'Run tests for walkthrough',
-    'staging': '\tRun tests for staging only'
+    'staging': '\tRun tests for staging only',
+    'delete': '\tDelete all sketches from test user'
 }
 
 TARGETS = {
@@ -189,9 +199,12 @@ def main():
     parser.add_argument('--config',
                         default='config.cfg',
                         help='Configuration file to load (default: config.cfg).')
+    parser.add_argument('--test',
+                        default=None,
+                        help='Common test to run when using operation: common (default: all)')
     parser.add_argument('--libraries',
                         default=None,
-                        help='Libraries to test (comma separated machine names) when using option: target')
+                        help='Libraries to test (comma separated machine names) when using operation: target')
     parser.add_argument('--saucelabs',
                         action='store_true',
                         default=False,
@@ -213,6 +226,8 @@ def main():
         print('Unsupported target!\n')
         parser.print_help()
         sys.exit()
+
+    test = args.test
 
     libraries = args.libraries
     if operation == 'target' and not libraries:
@@ -258,7 +273,7 @@ def main():
 
     # Run tests
     tests = Tests(target, config)
-    tests.run(operation, libraries=libraries)
+    tests.run(operation, test=test, libraries=libraries)
 
 if __name__ == '__main__':
     main()
