@@ -58,25 +58,30 @@ class DisqusWrapper:
         return "{0} {1} {2}".format(message, sig, timestamp)
 
     def update_comment(self, sketch, results, current_date, log_entry, openFailFlag, total_sketches):
-        # Comment libraries
+        """A comment is added to the library as soon as its first example is compiled.
+        `library`: The library in which belongs the currently compiled example.
+        `self.last_library`: The library in which belongs the previously compiled example.
+        `library_to_comment`: The library in which a comment should be added.
+        """
+
         library_match = re.match(r'.+\/example\/(.+)\/.+', sketch)
         library = None
         library_to_comment = None
+
         if library_match:
             library = library_match.group(1)
-        if not self.last_library:
-            self.last_library = library
-            library_to_comment = library
 
+        "Check if the currently compiled example belongs to the same library as the previous one."
         if library != self.last_library:
             library_to_comment = library
 
+        "Check if we should add a comment to the library."
         if library_to_comment:
             log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
 
         self.last_library = library
 
-        # Comment examples
+        "Add a comment to the currently compiled library example."
         if not openFailFlag:
             log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
 
