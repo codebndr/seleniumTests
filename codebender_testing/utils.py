@@ -651,9 +651,6 @@ class CodebenderSeleniumBot(object):
             # Register current URL into log.
             if sketch not in log_entry:
                 log_entry[sketch] = {}
-                print "\n"
-                print "sketch"
-                print "log_entry[" + sketch +"]", log_entry[sketch]
 
             test_status = '.'
 
