@@ -400,6 +400,102 @@ class CodebenderSeleniumBot(object):
         except:
             pass
 
+    def resume_log (self, logfile, compile_type, sketches):
+        """Resume previous log, if any. Coves 3 cases:
+        Case 1: Test runs for 1st time and there is no previous log file.
+        Case 2: Test runs for 2nd time and there is a previous log file which contains
+        some of the urls that should be compiled and log file should be completed with
+        the rest.
+        Case 3: Test runs for 2nd time and there is a previous log file which contains
+        all the urls that should be compiled and test should be run again for all urls.
+        """
+        """Creates a variable in which current date and time are stored."""
+        log_time = gmtime()
+
+        """Creates an empty dictionary each time that a test runs."""
+        log_entry = {}
+
+        """Creates an empty dictionary each time that a test runs."""
+        urls_visited = {}
+
+        """Calls `read_last_log` function and checks if there is a previous log file
+        of the same compile_type (e.g. sketch). If there is, a dictionary containing
+        `timestamp` and `log` keys with their corresponding values is returned.
+        Otherwise, a dictionary where `timestamp` and `log` values are `None` is returned.
+        No previous log:
+        {'timestamp': None, 'log': None}
+        Previous log exists:
+        {'timestamp': '2016-02-14_10-42-17',
+         'log': {
+                'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
+                'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}
+                }
+        }
+        """
+        last_log = read_last_log(compile_type)
+
+        if compile_type != 'target_library' and last_log['log']:
+            """Checks if `last_log[log]` has a value (is not `None`).
+            If it has, this means that there is a log file created previously and dictionaries
+            `log_entry` and `urls_visited` should be updated.
+            {'timestamp': '2016-02-14_12-44-16',
+             'log': {
+                    'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
+                    'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}
+                    }
+            }
+            """
+            if last_log['log']:
+                log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
+
+                """ Test has stopped its execution for some reason, (e.g.to avoid saucelabs timeout)
+                and `log_entry` dictionary will be filled with the entries of `last_log[log]` values.
+                log_entry = {'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
+                             'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}}
+                """
+                log_entry = last_log['log']
+
+                """ Test has stopped its execution for some reason,(e.g.to avoid saucelabs timeout)
+                and `urls_visited` dictionary will be filled with the urls already visited when the test stopped.
+                urls_visited = {'https://staging.codebender.cc/sketch:30360': True,
+                                'https://staging.codebender.cc/sketch:30352': True}
+                """
+                for url in last_log['log']:
+                    urls_visited[url] = True
+
+        """Creates an empty dictionary each time that a test runs."""
+        urls_to_visit = []
+
+        """If a test has stopped its execution for some reason,
+        (e.g.to avoid saucelabs timeout) `urls_to_visit` dictionary will
+        be filled with the urls that remain to be visited.
+        urls_to_visit = {'https://staging.codebender.cc/sketch:30358',
+                         'https://staging.codebender.cc/sketch:30355'}
+        """
+        for url in sketches:
+            if url not in urls_visited:
+                urls_to_visit.append(url)
+
+        """If the urls_to_visit is empty, this means that the test was completed
+        and should start again. `urls_to_visit` equals to all `sketches` and `log_entry`
+        is an empty dictionary.
+        """
+        if len(urls_to_visit) == 0:
+            urls_to_visit = sketches
+            log_entry = {}
+            log_time = gmtime()
+
+        """ If `logfile` has a value and is not `None` we create `log_file`."""
+        if logfile:
+            log_file = strftime(logfile, log_time)
+
+        return (urls_to_visit, log_entry, log_file, log_time)
+
+    def create_log (self, log_file, log_entry,compile_type):
+        # Dump the test results to `log_file`.
+        with open(log_file, 'w') as f:
+            f.write(jsondump(log_entry))
+
     def open_all_libraries_and_examples(self, url, logfile):
         self.open(url)
         examples = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector='.accordion li a'), '$')
@@ -504,103 +600,6 @@ class CodebenderSeleniumBot(object):
         sketches = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector=selector), '$')
         assert len(sketches) > 0
         self.compile_sketches(sketches, **kwargs)
-
-    def resume_log (self, logfile, compile_type, sketches):
-        """Resume previous log, if any. Coves 3 cases:
-        Case 1: Test runs for 1st time and there is no previous log file.
-        Case 2: Test runs for 2nd time and there is a previous log file which contains
-        some of the urls that should be compiled and log file should be completed with
-        the rest.
-        Case 3: Test runs for 2nd time and there is a previous log file which contains
-        all the urls that should be compiled and test should be run again for all urls.
-        """
-        """Creates a variable in which current date and time are stored."""
-        log_time = gmtime()
-
-        """Creates an empty dictionary each time that a test runs."""
-        log_entry = {}
-
-        """Creates an empty dictionary each time that a test runs."""
-        urls_visited = {}
-
-        """Calls `read_last_log` function and checks if there is a previous log file
-        of the same compile_type (e.g. sketch). If there is, a dictionary containing
-        `timestamp` and `log` keys with their corresponding values is returned.
-        Otherwise, a dictionary where `timestamp` and `log` values are `None` is returned.
-        No previous log:
-        {'timestamp': None, 'log': None}
-        Previous log exists:
-        {'timestamp': '2016-02-14_10-42-17',
-         'log': {
-                'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
-                'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}
-                }
-        }
-        """
-        last_log = read_last_log(compile_type)
-
-        if compile_type != 'target_library' and last_log['log']:
-            """Checks if `last_log[log]` has a value (is not `None`).
-            If it has, this means that there is a log file created previously and dictionaries
-            `log_entry` and `urls_visited` should be updated.
-            {'timestamp': '2016-02-14_12-44-16',
-             'log': {
-                    'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
-                    'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}
-                    }
-            }
-            """
-            if last_log['log']:
-                log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
-
-                """ Test has stopped its execution for some reason, (e.g.to avoid saucelabs timeout)
-                and `log_entry` dictionary will be filled with the entries of `last_log[log]` values.
-                log_entry = {'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
-                             'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}}
-                """
-                log_entry = last_log['log']
-
-                """ Test has stopped its execution for some reason,(e.g.to avoid saucelabs timeout)
-                and `urls_visited` dictionary will be filled with the urls already visited when the test stopped.
-                urls_visited = {'https://staging.codebender.cc/sketch:30360': True,
-                                'https://staging.codebender.cc/sketch:30352': True}
-                """
-                for url in last_log['log']:
-                    urls_visited[url] = True
-
-        """Creates an empty dictionary each time that a test runs."""
-        urls_to_visit = []
-
-        """If a test has stopped its execution for some reason,
-        (e.g.to avoid saucelabs timeout) `urls_to_visit` dictionary will
-        be filled with the urls that remain to be visited.
-        urls_to_visit = {'https://staging.codebender.cc/sketch:30358',
-                         'https://staging.codebender.cc/sketch:30355'}
-        """
-        for url in sketches:
-            if url not in urls_visited:
-                urls_to_visit.append(url)
-
-        """If the urls_to_visit is empty, this means that the test was completed
-        and should start again. `urls_to_visit` equals to all `sketches` and `log_entry`
-        is an empty dictionary.
-        """
-        if len(urls_to_visit) == 0:
-            urls_to_visit = sketches
-            log_entry = {}
-            log_time = gmtime()
-
-        """ If `logfile` has a value and is not `None` we create `log_file`."""
-        if logfile:
-            log_file = strftime(logfile, log_time)
-
-        return (urls_to_visit, log_entry, log_file, log_time)
-
-    def create_log (self, log_file, log_entry,compile_type):
-        # Dump the test results to `log_file`.
-        with open(log_file, 'w') as f:
-            f.write(jsondump(log_entry))
-
 
     def compile_sketches(self, sketches, iframe=False, project_view=False, logfile=None, compile_type='sketch', create_report=False, comment=False):
         """Compiles the sketches with URLs given by the `sketches` list.
