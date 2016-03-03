@@ -7,7 +7,7 @@ import os
 class TestHome(SeleniumTestCase):
 
     def test_navigate_home(self, tester_logout):
-        """ opens browser to codebender bachelor """
+        """ opens browser to codebender """
         self.open("/")
         assert "codebender" in self.driver.title
 

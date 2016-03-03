@@ -4,15 +4,15 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 import pytest
 
-from codebender_testing.config import TEST_PROJECT_NAME
+from codebender_testing.config import TEST_PROJECT_NAME, TIMEOUT
 from codebender_testing.utils import SeleniumTestCase
 from codebender_testing.utils import SELECT_BOARD_SCRIPT
 from codebender_testing.utils import throttle_compile
 
 
 # How long to wait before we give up on trying to assess the result of commands
-VERIFY_TIMEOUT = 30
-FLASH_TIMEOUT = 30
+VERIFY_TIMEOUT = TIMEOUT['VERIFY']
+FLASH_TIMEOUT = TIMEOUT['FLASH']
 
 # Board to test for the dropdown selector.
 TEST_BOARD = "Arduino Fio"
@@ -84,6 +84,14 @@ class TestSketch(SeleniumTestCase):
         WebDriverWait(self.driver, FLASH_TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
                 (By.ID, "operation_output"), 'Please select a valid port!'
+            )
+        )
+
+    def test_close_serial_monitor(self):
+        self.get_element(By.ID, 'serial_monitor_toggle').click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, 'serial_monitor')
             )
         )
 

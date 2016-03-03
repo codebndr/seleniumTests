@@ -400,6 +400,102 @@ class CodebenderSeleniumBot(object):
         except:
             pass
 
+    def resume_log (self, logfile, compile_type, sketches):
+        """Resume previous log, if any. Coves 3 cases:
+        Case 1: Test runs for 1st time and there is no previous log file.
+        Case 2: Test runs for 2nd time and there is a previous log file which contains
+        some of the urls that should be compiled and log file should be completed with
+        the rest.
+        Case 3: Test runs for 2nd time and there is a previous log file which contains
+        all the urls that should be compiled and test should be run again for all urls.
+        """
+        #Creates a variable in which current date and time are stored.
+        log_time = gmtime()
+
+        #Creates an empty dictionary each time that a test runs.
+        log_entry = {}
+
+        #Creates an empty dictionary each time that a test runs.
+        urls_visited = {}
+
+        """Calls `read_last_log` function and checks if there is a previous log file
+        of the same compile_type (e.g. sketch). If there is, a dictionary containing
+        `timestamp` and `log` keys with their corresponding values is returned.
+        Otherwise, a dictionary where `timestamp` and `log` values are `None` is returned.
+        No previous log:
+        {'timestamp': None, 'log': None}
+        Previous log exists:
+        {'timestamp': '2016-02-14_10-42-17',
+         'log': {
+                'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
+                'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}
+                }
+        }
+        """
+        last_log = read_last_log(compile_type)
+
+        if compile_type != 'target_library' and last_log['log']:
+            """Checks if `last_log[log]` has a value (is not `None`).
+            If it has, this means that there is a log file created previously and dictionaries
+            `log_entry` and `urls_visited` should be updated.
+            {'timestamp': '2016-02-14_12-44-16',
+             'log': {
+                    'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
+                    'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}
+                    }
+            }
+            """
+            if last_log['log']:
+                log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
+
+                """ Test has stopped its execution for some reason, (e.g.to avoid saucelabs timeout)
+                and `log_entry` dictionary will be filled with the entries of `last_log[log]` values.
+                log_entry = {'https://staging.codebender.cc/sketch:30360': {'success': ['Arduino Uno']},
+                             'https://staging.codebender.cc/sketch:30352': {'success': ['Arduino Uno']}}
+                """
+                log_entry = last_log['log']
+
+                """ Test has stopped its execution for some reason,(e.g.to avoid saucelabs timeout)
+                and `urls_visited` dictionary will be filled with the urls already visited when the test stopped.
+                urls_visited = {'https://staging.codebender.cc/sketch:30360': True,
+                                'https://staging.codebender.cc/sketch:30352': True}
+                """
+                for url in last_log['log']:
+                    urls_visited[url] = True
+
+        #Creates an empty dictionary each time that a test runs.
+        urls_to_visit = []
+
+        """If a test has stopped its execution for some reason,
+        (e.g.to avoid saucelabs timeout) `urls_to_visit` dictionary will
+        be filled with the urls that remain to be visited.
+        urls_to_visit = {'https://staging.codebender.cc/sketch:30358',
+                         'https://staging.codebender.cc/sketch:30355'}
+        """
+        for url in sketches:
+            if url not in urls_visited:
+                urls_to_visit.append(url)
+
+        """If the urls_to_visit is empty, this means that the test was completed
+        and should start again. `urls_to_visit` equals to all `sketches` and `log_entry`
+        is an empty dictionary.
+        """
+        if len(urls_to_visit) == 0:
+            urls_to_visit = sketches
+            log_entry = {}
+            log_time = gmtime()
+
+        #If `logfile` has a value and is not `None` we create `log_file`.
+        if logfile:
+            log_file = strftime(logfile, log_time)
+
+        return (urls_to_visit, log_entry, log_file, log_time)
+
+    def create_log (self, log_file, log_entry,compile_type):
+        # Dump the test results to `log_file`.
+        with open(log_file, 'w') as f:
+            f.write(jsondump(log_entry))
+
     def open_all_libraries_and_examples(self, url, logfile):
         self.open(url)
         examples = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector='.accordion li a'), '$')
@@ -407,31 +503,8 @@ class CodebenderSeleniumBot(object):
         libraries = self.execute_script(_GET_SKETCHES_SCRIPT.format(selector='.library_link'), '$')
         assert len(libraries) > 0
         examples_libraries = examples + libraries
-
-        log_time = gmtime()
-        log_file = strftime(logfile, log_time)
-        log_entry = {}
-
-        urls_visited = {}
-        last_log = read_last_log('fetch')
-        if last_log['log']:
-            # resume previous compile
-            log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
-            log_file = strftime(logfile, log_time)
-            log_entry = last_log['log']
-            for url in last_log['log']:
-                urls_visited[url] = True
-
-        urls_to_visit = []
-        for url in examples_libraries:
-            if url not in urls_visited:
-                urls_to_visit.append(url)
-
-        if len(urls_to_visit) == 0:
-            urls_to_visit = examples_libraries
-            log_entry = {}
-            log_time = gmtime()
-            log_file = strftime(logfile, log_time)
+        compile_type = 'fetch'
+        urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, examples_libraries)
 
         library_re = re.compile(r'^https://codebender.cc/library/.+$')
         example_re = re.compile(r'^https://codebender.cc/example/.+/.+$')
@@ -541,49 +614,24 @@ class CodebenderSeleniumBot(object):
         number of sketches compiled to 1.
         """
 
-        # Log filename
-        log_time = gmtime()
-        # Keeps the logs of each compile
-        log_entry = {}
+        urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, sketches)
 
-        urls_visited = {}
-        last_log = read_last_log(compile_type)
-        if compile_type != 'target_library' and last_log['log']:
-            # resume previous compile
-            log_time = strptime(last_log['timestamp'], '%Y-%m-%d_%H-%M-%S')
-            log_entry = last_log['log']
-            for url in last_log['log']:
-                urls_visited[url] = True
-
-        urls_to_visit = []
-        for url in sketches:
-            if url not in urls_visited:
-                urls_to_visit.append(url)
-
-        if len(urls_to_visit) == 0:
-            urls_to_visit = sketches
-            log_entry = {}
-            log_time = gmtime()
-
-        current_date = strftime('%Y-%m-%d', log_time)
-        # Initialize DisqusWrapper
+        # Initialize DisqusWrapper.
         disqus_wrapper = DisqusWrapper(log_time)
-        if logfile:
-            log_file = strftime(logfile, log_time)
 
         print '\nCompiling:', len(urls_to_visit), 'sketches'
         total_sketches = len(urls_to_visit)
         tic = time.time()
 
         for sketch in urls_to_visit:
-            # Read the boards map in case current sketch/example requires a special board configuration
+            # Read the boards map in case current sketch/example requires a special board configuration.
             boards = BOARDS_DB['default_boards']
             url_fragments = urlparse(sketch)
             if url_fragments.path in BOARDS_DB['special_boards']:
                 boards = BOARDS_DB['special_boards'][url_fragments.path]
 
             if len(boards) > 0:
-                # Run Verify
+                # Run Verify.
                 results = self.compile_sketch(sketch, boards, iframe=iframe, project_view=project_view)
             else:
                 results = [
@@ -592,22 +640,25 @@ class CodebenderSeleniumBot(object):
                     }
                 ]
 
-            # Used when not funning in Full mode
+            """If test is not running in full mode (-F option) or logfile is None
+            no logs are produced inside /logs directory and we continue with sketches
+            compilation.
+            """
             if logfile is None or not self.run_full_compile_tests:
                 toc = time.time()
                 continue
 
-            # Register current URL into log
+            # Register current URL into log.
             if sketch not in log_entry:
                 log_entry[sketch] = {}
 
             test_status = '.'
-            # Log the compilation results
+
+            # Log the compilation results.
             openFailFlag = False
             for result in results:
                 if result['status'] in ['success', 'fail', 'error'] and result['status'] not in log_entry[sketch]:
                     log_entry[sketch][result['status']] = []
-
                 if result['status'] == 'success':
                     log_entry[sketch]['success'].append(result['board'])
                 elif result['status'] == 'fail':
@@ -627,13 +678,12 @@ class CodebenderSeleniumBot(object):
                     log_entry[sketch]['unsupported'] = True
                     test_status = 'U'
 
-            # Update Disqus comments
-            if compile_type in ['library', 'target_library'] and comment:
-                log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
+            self.create_log(log_file,log_entry, compile_type)
 
-            # Dump the test results to `logfile`.
-            with open(log_file, 'w') as f:
-                f.write(jsondump(log_entry))
+            # Update Disqus comments.
+            current_date = strftime('%Y-%m-%d', log_time)
+            if comment and compile_type in ['library', 'target_library']:
+                log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
 
             # Display progress
             sys.stdout.write(test_status)
@@ -645,7 +695,7 @@ class CodebenderSeleniumBot(object):
                 print 'Test duration:', int(toc - tic), 'sec'
                 return
 
-        # Generate a report if requested
+        # Generate a report if requested.
         if compile_type != 'target_library' and create_report:
             report_creator(compile_type, log_entry, log_file)
         print '\nTest duration:', int(toc - tic), 'sec'
