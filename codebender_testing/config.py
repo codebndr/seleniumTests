@@ -151,11 +151,11 @@ def create_webdriver(command_executor, desired_capabilities):
 
     if browser_name == "chrome":
         desired_capabilities = DesiredCapabilities.CHROME.copy()
-        options = chrome.options.Options()
-        browser_profile_path = os.path.join('/tmp', _get_chrome_profile())
-        options.add_argument('--user-data-dir=' + browser_profile_path)
         if desired_capabilities["version"] > CHROME_EXT_MAX_CHROME_VERSION:
             # Add the chrome app to capabilities.
+            options = chrome.options.Options()
+            browser_profile_path = os.path.join('/tmp', _get_chrome_profile())
+            options.add_argument('--user-data-dir=' + browser_profile_path)
             options.add_extension(os.path.join(_EXTENSIONS_DIR, _CHROME_APP_FNAME))
             options.add_argument("--user-agent=" + TESTS_USER_AGENT_CHROME)
         else:
