@@ -71,17 +71,17 @@ class DisqusWrapper:
         if library_match:
             library = library_match.group(1)
 
-        "Check if the currently compiled example belongs to the same library as the previous one."
+        #Check if the currently compiled example belongs to the same library as the previous one.
         if library != self.last_library:
             library_to_comment = library
 
-        "Check if we should add a comment to the library."
+        #Check if we should add a comment to the library.
         if library_to_comment:
             log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
 
         self.last_library = library
 
-        "Add a comment to the currently compiled library example."
+        #Add a comment to the currently compiled library example.
         if not openFailFlag:
             log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
 

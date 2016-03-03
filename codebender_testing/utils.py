@@ -409,13 +409,13 @@ class CodebenderSeleniumBot(object):
         Case 3: Test runs for 2nd time and there is a previous log file which contains
         all the urls that should be compiled and test should be run again for all urls.
         """
-        """Creates a variable in which current date and time are stored."""
+        #Creates a variable in which current date and time are stored.
         log_time = gmtime()
 
-        """Creates an empty dictionary each time that a test runs."""
+        #Creates an empty dictionary each time that a test runs.
         log_entry = {}
 
-        """Creates an empty dictionary each time that a test runs."""
+        #Creates an empty dictionary each time that a test runs.
         urls_visited = {}
 
         """Calls `read_last_log` function and checks if there is a previous log file
@@ -463,7 +463,7 @@ class CodebenderSeleniumBot(object):
                 for url in last_log['log']:
                     urls_visited[url] = True
 
-        """Creates an empty dictionary each time that a test runs."""
+        #Creates an empty dictionary each time that a test runs.
         urls_to_visit = []
 
         """If a test has stopped its execution for some reason,
@@ -485,7 +485,7 @@ class CodebenderSeleniumBot(object):
             log_entry = {}
             log_time = gmtime()
 
-        """ If `logfile` has a value and is not `None` we create `log_file`."""
+        #If `logfile` has a value and is not `None` we create `log_file`.
         if logfile:
             log_file = strftime(logfile, log_time)
 
