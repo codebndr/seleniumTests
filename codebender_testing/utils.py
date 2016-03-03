@@ -713,7 +713,7 @@ class CodebenderSeleniumBot(object):
                 return
 
         # Generate a report if requested.
-        if compile_type != 'target_library' and create_report:
+        if compile_type != 'target_library' and create_report and self.run_full_compile_tests:
             report_creator(compile_type, log_entry, log_file)
         print '\nTest duration:', int(toc - tic), 'sec'
 
