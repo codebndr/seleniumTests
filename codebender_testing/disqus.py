@@ -76,7 +76,7 @@ class DisqusWrapper:
             library_to_comment = library
 
         #Check if we should add a comment to the library.
-        if library_to_comment:
+        if library_to_comment and library not in self.examples_without_library:
             log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
 
         self.last_library = library
