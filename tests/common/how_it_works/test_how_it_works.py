@@ -106,7 +106,7 @@ class TestHowItWorks(SeleniumTestCase):
         WebDriverWait(self.driver, TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
                 (By.CSS_SELECTOR,
-                '.navbar .popover:nth-child(3) .popover-title'),
+                '.navbar-inner .nav.pull-right .popover.fade.bottom.in .popover-title'),
                 "That's all for now."
             )
         )
