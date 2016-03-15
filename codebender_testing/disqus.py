@@ -89,25 +89,42 @@ class DisqusWrapper:
     def handle_library_comment(self, library, current_date, log):
         url = '/library/' + library
         identifier = 'ident:' + url
+
         if url not in log:
             log[url] = {}
         try:
             log[url]['comment'] = False
+
+            """ Returns a Paginator object that matches the desired criteria:
+            `self.disqus.api.threads.list`: Returns a list containg all urls in which Disqus loaded.
+            `forum`: Looks up a forum by short name.
+            `thread`: Looks up a thread by ID BUT you may pass us the 'ident' query type instead of
+            an ID by including 'forum'. Filters results returned from `self.disqus.api.threads.list`
+            and returns only those which match `forum` and `thread`.
+            IMPORTANT: If `thread` is not found, all threads are returned!!!
+            """
             paginator = disqusapi.Paginator(self.disqus.api.threads.list,
                                             forum=FORUM,
-                                            thread=identifier, method='GET')
+                                            thread=identifier)
             if paginator:
                 comment_updated = False
                 new_message = self.messages['library'].replace('TEST_DATE', current_date)
-                for page in paginator:
-                    post_id, existing_message = self.get_posts(page['id'])
+
+                for thread in paginator:
+
+                    # Check if library has already a comment.
+                    post_id, existing_message = self.get_posts(thread['id'])
+
+                    #If library already has a comment, update it.
                     if post_id and existing_message:
                         log[url]['comment'] = self.update_post(post_id, new_message)
                         comment_updated = True
                         break
 
+                #If library doesn't have a comment, create it.
                 if not comment_updated:
                     log[url]['comment'] = self.create_post(identifier, new_message)
+
         except Exception as error:
             print 'Error:', error
             log[url]['comment'] = False
