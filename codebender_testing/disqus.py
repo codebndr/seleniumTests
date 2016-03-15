@@ -63,11 +63,11 @@ class DisqusWrapper:
         `self.last_library`: The library in which belongs the previously compiled example.
         `library_to_comment`: The library in which a comment should be added.
         """
-
         library_match = re.match(r'.+\/example\/(.+)\/.+', sketch)
         library = None
         library_to_comment = None
 
+        # Set the library in which belongs the currently compiled example.
         if library_match:
             library = library_match.group(1)
 
@@ -80,7 +80,6 @@ class DisqusWrapper:
             log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
 
         self.last_library = library
-
         #Add a comment to the currently compiled library example.
         if not openFailFlag:
             log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
