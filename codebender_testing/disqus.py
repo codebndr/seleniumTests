@@ -177,15 +177,21 @@ class DisqusWrapper:
         post_id = None
         raw_message = None
         try:
+            """ Returns a Paginator object that matches the desired criteria:
+            `self.disqus.api.posts.list`: Returns a list of posts ordered by the date created.
+            `forum`: Looks up a forum by short name.
+            `thread`: Looks up a thread by ID. Filters results returned from `self.disqus.api.posts.list`
+            and returns only those which match `forum` and `thread`.
+            """
             paginator = disqusapi.Paginator(self.disqus.api.posts.list,
                                             forum=FORUM,
                                             thread=thread_id,
-                                            order='asc', method='GET')
+                                            order='asc')
             if paginator:
-                for result in paginator:
-                    if result['author']['name'] == self.user['username'] and result['author']['url'] == AUTHOR_URL:
-                        post_id = result['id']
-                        raw_message = result['raw_message']
+                for post in paginator:
+                    if post['author']['name'] == self.user['username'] and post['author']['url'] == AUTHOR_URL:
+                        post_id = post['id']
+                        raw_message = post['raw_message']
                         break
         except Exception as error:
             print 'Error:', error
