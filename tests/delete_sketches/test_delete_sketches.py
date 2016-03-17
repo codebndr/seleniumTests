@@ -7,7 +7,7 @@ class TestDeleteAllSketches(SeleniumTestCase):
 
     @pytest.mark.requires_url(STAGING_SITE_URL)
     def test_delete(self, tester_login):
-        sketches = self.driver.find_elements(By.CSS_SELECTOR, '#project_list > li >a')
+        sketches = self.find_all('#project_list>li .sketch-block-title >a')
         projects = []
         for sketch in sketches:
             projects.append(sketch.text)
