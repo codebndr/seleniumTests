@@ -8,12 +8,8 @@ LOG_FILE = LOGFILE_PREFIX.format(log_name="test_target_libraries")
 
 GET_ALL_LIBRARIES_SCRIPT = """
     var libraries = {};
-    var humanNameRegExp = /^.+\((.+)\)$/;
     $('#mycontainer').find('.library-expand-handle').map(function () {
-        var libraryName = $(this).text();
-        if (humanNameRegExp.test(libraryName)) {
-            libraryName = libraryName.match(humanNameRegExp)[1].trim().replace(/\.h/, '');
-        }
+        var libraryName = $(this).parents('.accordion-group').attr('data-name');
         libraries[libraryName] = $(this).parent().find('.library_link').attr('href');
     });
     return libraries;
@@ -38,6 +34,7 @@ class TestLibraryExamples(SeleniumTestCase):
 
         urls_to_follow = []
         for target in targets:
+            target = target.lower()
             if target in libraries:
                 library_url = libraries[target]
                 self.open(library_url)

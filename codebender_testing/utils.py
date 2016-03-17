@@ -123,9 +123,17 @@ def read_last_log(compile_type):
     }
 
 
-# Creates a report json after each compile test
 def report_creator(compile_type, log_entry, log_file):
+    """Creates a report json after each compile.
+    `logs`: a list in which all log files located in logs directory are added.
+    `logs_to_examine`: the list of all log files located in logs directory sorted.
+    `tail`: the two most recent logs in logs directory.
+    `diff`: a dictionary where all differences between the two logs are stored.
+    `changes`: a counter indicating the number of differences found between the two logs.
+    """
+
     logs = os.listdir(get_path('logs'))
+
     logs_re = re.compile(r'.+cb_compile_tester.+')
     if compile_type == 'library':
         logs_re = re.compile(r'.+libraries_test.+')
@@ -134,8 +142,10 @@ def report_creator(compile_type, log_entry, log_file):
     elif compile_type == 'target_library':
         logs_re = re.compile(r'.+target_libraries.+')
 
-    logs = sorted([x for x in logs if x != '.gitignore' and logs_re.match(x)])
+    logs = sorted([x for x in logs if logs_re.match(x)])
     tail = logs[-2:]
+
+    # Opens the last, or the last two log files and gathers all their contents.
     logs_to_examine = []
     for log in tail:
         try:
@@ -146,68 +156,75 @@ def report_creator(compile_type, log_entry, log_file):
 
     diff = {}
     changes = 0
+
+    # We have only one log file, it is the first time we run the test.
+    if len(logs_to_examine) == 1:
+        diff = logs_to_examine[0]
+        changes += 1
+
+    # We have more than one log files, it is not the first time we run the test.
     if len(logs_to_examine) >= 2:
+
         old_log = logs_to_examine[0]
         new_log = logs_to_examine[1]
 
+        #Iterate over all new_log keys (urls).
         for url in new_log.keys():
+
+            # Check if key (url) is included in `old_log`. If not, add an entry to `diff` dictionary.
             if url not in old_log:
                 diff[url] = new_log[url]
                 changes += 1
                 continue
 
+            """Check if log comes from test test_libraries_fetch.py test.
+            If yes, we check if the `old_log[url]`value is the same with
+            `new_log[url]`value. If not, add an entry to `diff` dictionary."""
             if compile_type == 'fetch':
                 if old_log[url] != new_log[url]:
                     diff[url] = new_log[url]
                     changes += 1
                 continue
 
-            for result in  new_log[url].keys():
-                if result not in old_log[url]:
-                    if not url in diff:
+            """Iterate over all `new_log[url]` keys. Keys can have one of the following
+            values: 'success', 'fail', 'open_fail', 'error', 'comment'."""
+            for result in new_log[url].keys():
+
+                """Check if for the specific url, result is included in
+                `old_log[url]` keys. If not, check if specific url has an entry in
+                `diff` dictionary and if not create one. Then add the `result` value.
+                e.g. `result`: success
+                     `old_log[url].keys()`: ['fail', 'success']"""
+
+                if result not in old_log[url].keys():
+                    if url not in diff:
                         diff[url] = {}
                     diff[url][result] = new_log[url][result]
                     changes += 1
                     continue
 
-                if result == 'success' or result == 'fail':
-                    if result not in old_log[url]:
-                        if not url in diff:
+                # Check if for the specific url, the result is `comment` or `open_fail` or `error`.
+                if result == 'comment' or result == 'open_fail' or result == 'error':
+                    # Check if the value for the specific result is the same in both logs.
+                    if old_log[url][result] != new_log[url][result]:
+                        # Check if the url is on diff dictionary, if not I add it.
+                        if url not in diff:
                             diff[url] = {}
                         diff[url][result] = new_log[url][result]
                         changes += 1
-                        continue
 
+                # Check if for the specific url, the result is `success` or `fail`.
+                elif result == 'success' or result == 'fail':
                     for board in new_log[url][result]:
-                        oposite = 'success'
-                        if result == 'success':
-                            oposite = 'fail'
-                        if oposite in old_log[url] and board in old_log[url][oposite]:
-                            if not url in diff:
+                        if board not in old_log[url][result]:
+                            if url not in diff:
                                 diff[url] = {}
                             if result not in diff[url]:
                                 diff[url][result] = []
                             diff[url][result].append(board)
                             changes += 1
-                elif result == 'open_fail' or result == 'error' or result == 'comment':
-                    if result not in old_log[url]:
-                        if not url in diff:
-                            diff[url] = {}
-                        diff[url][result] = new_log[url][result]
-                        changes += 1
-                        continue
-                    if old_log[url][result] != new_log[url][result]:
-                        if not url in diff:
-                            diff[url] = {}
-                        diff[url][result] = new_log[url][result]
-                        changes += 1
-    elif len(logs_to_examine) == 1:
-        diff = logs_to_examine[0]
-        changes += 1
-    else:
-        diff = log_entry
-        changes += 1
 
+    #Create report and write the results.
     filename_tokens = os.path.basename(log_file).split('.')
     filename = '.'.join(filename_tokens[0:-1])
     extension = filename_tokens[-1]
@@ -696,7 +713,7 @@ class CodebenderSeleniumBot(object):
                 return
 
         # Generate a report if requested.
-        if compile_type != 'target_library' and create_report:
+        if compile_type != 'target_library' and create_report and self.run_full_compile_tests:
             report_creator(compile_type, log_entry, log_file)
         print '\nTest duration:', int(toc - tic), 'sec'
 

@@ -63,11 +63,11 @@ class DisqusWrapper:
         `self.last_library`: The library in which belongs the previously compiled example.
         `library_to_comment`: The library in which a comment should be added.
         """
-
         library_match = re.match(r'.+\/example\/(.+)\/.+', sketch)
         library = None
         library_to_comment = None
 
+        # Set the library in which belongs the currently compiled example.
         if library_match:
             library = library_match.group(1)
 
@@ -76,11 +76,10 @@ class DisqusWrapper:
             library_to_comment = library
 
         #Check if we should add a comment to the library.
-        if library_to_comment:
+        if library_to_comment and library not in self.examples_without_library:
             log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
 
         self.last_library = library
-
         #Add a comment to the currently compiled library example.
         if not openFailFlag:
             log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
@@ -90,25 +89,42 @@ class DisqusWrapper:
     def handle_library_comment(self, library, current_date, log):
         url = '/library/' + library
         identifier = 'ident:' + url
+
         if url not in log:
             log[url] = {}
         try:
             log[url]['comment'] = False
+
+            """ Returns a Paginator object that matches the desired criteria:
+            `self.disqus.api.threads.list`: Returns a list containg all urls in which Disqus loaded.
+            `forum`: Looks up a forum by short name.
+            `thread`: Looks up a thread by ID BUT you may pass us the 'ident' query type instead of
+            an ID by including 'forum'. Filters results returned from `self.disqus.api.threads.list`
+            and returns only those which match `forum` and `thread`.
+            IMPORTANT: If `thread` is not found, all threads are returned!!!
+            """
             paginator = disqusapi.Paginator(self.disqus.api.threads.list,
                                             forum=FORUM,
-                                            thread=identifier, method='GET')
+                                            thread=identifier)
             if paginator:
                 comment_updated = False
                 new_message = self.messages['library'].replace('TEST_DATE', current_date)
-                for page in paginator:
-                    post_id, existing_message = self.get_posts(page['id'])
+
+                for thread in paginator:
+
+                    # Check if library has already a comment.
+                    post_id, existing_message = self.get_posts(thread['id'])
+
+                    #If library already has a comment, update it.
                     if post_id and existing_message:
                         log[url]['comment'] = self.update_post(post_id, new_message)
                         comment_updated = True
                         break
 
+                #If library doesn't have a comment, create it.
                 if not comment_updated:
                     log[url]['comment'] = self.create_post(identifier, new_message)
+
         except Exception as error:
             print 'Error:', error
             log[url]['comment'] = False
@@ -161,15 +177,21 @@ class DisqusWrapper:
         post_id = None
         raw_message = None
         try:
+            """ Returns a Paginator object that matches the desired criteria:
+            `self.disqus.api.posts.list`: Returns a list of posts ordered by the date created.
+            `forum`: Looks up a forum by short name.
+            `thread`: Looks up a thread by ID. Filters results returned from `self.disqus.api.posts.list`
+            and returns only those which match `forum` and `thread`.
+            """
             paginator = disqusapi.Paginator(self.disqus.api.posts.list,
                                             forum=FORUM,
                                             thread=thread_id,
-                                            order='asc', method='GET')
+                                            order='asc')
             if paginator:
-                for result in paginator:
-                    if result['author']['name'] == self.user['username'] and result['author']['url'] == AUTHOR_URL:
-                        post_id = result['id']
-                        raw_message = result['raw_message']
+                for post in paginator:
+                    if post['author']['name'] == self.user['username'] and post['author']['url'] == AUTHOR_URL:
+                        post_id = post['id']
+                        raw_message = post['raw_message']
                         break
         except Exception as error:
             print 'Error:', error

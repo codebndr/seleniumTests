@@ -68,7 +68,6 @@ URL="https://codebender.cc"
 email_date=$(date +"%Y-%m-%d %H:%M:%S")
 
 RETVAL=0
-NO_LOGS=0 # flag for tests that do not send any logs on their email
 
 if [ "${target}" -eq 1 ]; then
     IDENTIFIER="test_target_libraries"
@@ -86,12 +85,10 @@ elif [ "${common}" -eq 1 ]; then
     IDENTIFIER="common"
     tox tests/common -- --url=${URL} --plugin
     RETVAL=$?
-    NO_LOGS=1
 elif [ "${noplugin}" -eq 1 ]; then
     IDENTIFIER="noplugin"
     tox tests/noplugin -- --url=${URL}
     RETVAL=$?
-    NO_LOGS=1
 elif [ "${walkthrough}" -eq 1 ]; then
     IDENTIFIER="walkthrough"
     RETVALS=()
@@ -117,25 +114,24 @@ elif [ "${walkthrough}" -eq 1 ]; then
             RETVAL=${i}
         fi
     done
-    NO_LOGS=1
+
 elif [ "${staging}" -eq 1 ]; then
     IDENTIFIER="cb_compile_tester_staging"
     URL="https://staging.codebender.cc"
     tox tests/compile_tester -- --url=${URL} -F --plugin
-    # No need to send email for tests in staging
+    # No need to send email for tests in staging.
     exit $?
 fi
 
-# email notification without attaching any logs
+# Email notification without attaching any logs (options: common, noplugin, walkthrough).
 if [ ${RETVAL} -ne 0 ]; then
     mail -s "Selenium Tests: ${IDENTIFIER} Failed To Run" ${EMAIL} <<< "Something went wrong with ${IDENTIFIER} tests. Please check the logs."
-fi
-
-if [ ${NO_LOGS} -eq 1 ]; then
+    exit ${RETVAL}
+elif [ ${RETVAL} -eq 0 ]; then
     exit ${RETVAL}
 fi
 
-# email notification with attaching the produced reports
+# Email notification attaching the produced logs/reports(options: target, examples, libraries, sketches).
 LOGS="${ROOTDIR}/logs"
 REPORTS="${ROOTDIR}/reports"
 
