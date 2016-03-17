@@ -409,13 +409,22 @@ class CodebenderSeleniumBot(object):
         self.open('/')
         try:
             created_project = self.get_element(By.LINK_TEXT, project_name)
-            delete_button_li = created_project.find_element_by_xpath('..')
-            delete_button = delete_button_li.find_element_by_css_selector('.delete-sketch')
+            delete_button_li = created_project.find_element_by_xpath('../..')
+            delete_button = delete_button_li.find_element_by_css_selector('.sketch-block-controls :nth-child(3)')
             delete_button.click()
-            popup_delete_button = self.get_element(By.ID, 'deleteProjectButton')
+            popup_delete_button = self.get_element(By.CSS_SELECTOR, '#home-delete-sketch-modal :nth-child(4) :nth-child(2)')
             popup_delete_button.click()
+            popup_delete_message = self.get_element(By.CSS_SELECTOR, '#home-delete-sketch-modal .modal-footer.delete-sketch-modal-footer .delete-sketch-modal-message.success')
+            assert popup_delete_message.text == "Sketch was deleted!"
+            popup_close_button = self.get_element(By.CSS_SELECTOR, '#home-delete-sketch-modal :nth-child(4) :nth-child(3)')
+            popup_close_button.click()
+            WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+                expected_conditions.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, "#home-delete-sketch-modal")
+                )
+            )
         except:
-            pass
+            print "An action failed during deletion process of project:", project_name
 
     def resume_log (self, logfile, compile_type, sketches):
         """Resume previous log, if any. Coves 3 cases:
