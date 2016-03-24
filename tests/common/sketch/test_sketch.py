@@ -112,7 +112,21 @@ class TestSketch(SeleniumTestCase):
         """ Tests that new file can be added to project using create-new-file
         field """
         self.open_project()
-
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.visibility_of_element_located(
+                (By.CSS_SELECTOR, "#editor-loading-screen")
+                )
+            )
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.CSS_SELECTOR, "#editor-loading-screen")
+                )
+            )
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, "#newfile")
+            )
+        )
         add_button = self.get_element(By.ID, 'newfile')
         add_button.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
