@@ -739,7 +739,24 @@ class CodebenderSeleniumBot(object):
         """Creates a sketch with a given name"""
         createSketchBtn = self.driver.find_element_by_id('create_sketch_btn')
         createSketchBtn.click()
-        sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
+        createBtn = self.get_element(By.ID, 'create-sketch-modal-action-button')
+        createBtn.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CSS_SELECTOR, "#editor-loading-screen")
+                )
+            )
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+                expected_conditions.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, "#editor-loading-screen")
+                )
+            )
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, "#editor_heading_project_name")
+            )
+        )
+        sketchHeading = self.driver.find_element_by_id('editor_heading_project_name')
         sketchHeading.click()
         renameInput = '#editor_heading_project_name input'
         headingInput = self.get_element(By.CSS_SELECTOR, renameInput)
