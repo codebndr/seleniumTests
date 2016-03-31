@@ -38,8 +38,9 @@ class TestWalkthrough(SeleniumTestCase):
 
     def test_page_4(self):
         """Test page 4"""
-        cb_cf_boards = self.get_element(By.CSS_SELECTOR, '#cb_cf_boards')
-        assert cb_cf_boards.is_displayed()
+        WebDriverWait(self.driver, 30).until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '#cb_cf_boards optgroup[label="Arduino"]'))
+        )
         self.execute_script(SELECT_BOARD_SCRIPT(TEST_BOARD), '$')
         cb_cf_ports = self.get_element(By.CSS_SELECTOR, '#cb_cf_ports')
         assert cb_cf_ports.is_displayed()
