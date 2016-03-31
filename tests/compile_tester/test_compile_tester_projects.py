@@ -70,7 +70,7 @@ class TestCompileTester(SeleniumTestCase):
             )
             selector = '#project_list li[data-name="'+ upload_name +'"]'
             project_uploaded = self.get_element(By.CSS_SELECTOR, selector).text.split('\n')[0]
-            assert upload_name != project_uploaded, "upload_name is different from project_uploaded!"
+            assert upload_name == project_uploaded, "upload_name is different from project_uploaded!"
 
         flag = True
         while flag:
