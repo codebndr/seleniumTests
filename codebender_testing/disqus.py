@@ -72,6 +72,8 @@ class DisqusWrapper:
             library = library_match.group(1)
 
         #Check if the currently compiled example belongs to the same library as the previous one.
+        # To do so we check if value of library is the same with self.last library value which is updated
+        # every time that we log the results of a compiled example.
         if library != self.last_library:
             library_to_comment = library
 
