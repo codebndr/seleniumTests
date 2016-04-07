@@ -88,7 +88,7 @@ class DisqusWrapper:
 
         return log_entry
 
-    def handle_library_comment(self, library, current_date, log):
+    def handle_library_comment(self, library, current_date, log, examples=True):
         url = '/library/' + library
         identifier = 'ident:' + url
 
@@ -110,7 +110,10 @@ class DisqusWrapper:
                                             thread=identifier)
             if paginator:
                 comment_updated = False
-                new_message = self.messages['library'].replace('TEST_DATE', current_date)
+                if examples==False:
+                    new_message = self.messages['library_no_examples'].replace('TEST_DATE', current_date)
+                else:
+                    new_message = self.messages['library'].replace('TEST_DATE', current_date)
 
                 for thread in paginator:
 
