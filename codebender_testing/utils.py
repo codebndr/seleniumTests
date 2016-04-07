@@ -517,7 +517,7 @@ class CodebenderSeleniumBot(object):
 
         return (urls_to_visit, log_entry, log_file, log_time)
 
-    def create_log (self, log_file, log_entry,compile_type):
+    def create_log (self, log_file, log_entry, compile_type):
         # Dump the test results to `log_file`.
         with open(log_file, 'w') as f:
             f.write(jsondump(log_entry))
