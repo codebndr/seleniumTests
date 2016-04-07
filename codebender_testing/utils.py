@@ -704,12 +704,12 @@ class CodebenderSeleniumBot(object):
                     log_entry[sketch]['unsupported'] = True
                     test_status = 'U'
 
-            self.create_log(log_file,log_entry, compile_type)
-
             # Update Disqus comments.
             current_date = strftime('%Y-%m-%d', log_time)
             if comment and compile_type in ['library', 'target_library']:
                 log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
+
+            self.create_log(log_file, log_entry, compile_type)
 
             # Display progress
             sys.stdout.write(test_status)
