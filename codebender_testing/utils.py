@@ -617,6 +617,122 @@ class CodebenderSeleniumBot(object):
 
         return compilation_results
 
+    def comment_compile_libraries_examples(self, sketches, library_examples_dic={}, iframe=False, project_view=False,
+                                           logfile=None, compile_type='sketch', create_report=False, comment=False):
+
+        urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, sketches)
+
+        # Initialize DisqusWrapper.
+        disqus_wrapper = DisqusWrapper(log_time)
+        print "urls to visit:", urls_to_visit
+
+        print '\nCommenting and compiling:', len(urls_to_visit), 'libraries and examples.'
+
+        total_sketches = len(urls_to_visit)
+        tic = time.time()
+        library_re = re.compile(r'^.+/library/.+$')
+
+        for url in urls_to_visit:
+
+            if library_re.match(url):
+                library =url.split('/')[-1]
+                for key, value in library_examples_dic.iteritems():
+                    if(key==library and len(value)==0):
+                        if logfile is None or not self.run_full_compile_tests:
+                            toc = time.time()
+                            continue
+
+                        # Update Disqus comments.
+                        current_date = strftime('%Y-%m-%d', log_time)
+                        if comment and compile_type in ['library', 'target_library']:
+                            library=key
+                            examples=False
+                            log_entry = disqus_wrapper.handle_library_comment(library, current_date, log_entry, examples)
+                        self.create_log(log_file, log_entry, compile_type)
+                        toc = time.time()
+                        if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
+                            print '\nStopping tests to avoid saucelabs timeout'
+                            print 'Test duration:', int(toc - tic), 'sec'
+                            return
+            else:
+                sketch = url
+                # Read the boards map in case current sketch/example requires a special board configuration.
+                boards = BOARDS_DB['default_boards']
+                url_fragments = urlparse(sketch)
+                if url_fragments.path in BOARDS_DB['special_boards']:
+                    boards = BOARDS_DB['special_boards'][url_fragments.path]
+
+                if len(boards) > 0:
+                    # Run Verify.
+                    results = self.compile_sketch(sketch, boards, iframe=iframe, project_view=project_view)
+                else:
+                    results = [
+                        {
+                            'status': 'unsupported'
+                        }
+                    ]
+
+                """If test is not running in full mode (-F option) or logfile is None
+                no logs are produced inside /logs directory and we continue with sketches
+                compilation.
+                """
+                if logfile is None or not self.run_full_compile_tests:
+                    toc = time.time()
+                    continue
+
+                # Register current URL into log.
+                if sketch not in log_entry:
+                    log_entry[sketch] = {}
+
+                test_status = '.'
+
+                # Log the compilation results.
+                openFailFlag = False
+                for result in results:
+                    if result['status'] in ['success', 'fail', 'error'] and result['status'] not in log_entry[sketch]:
+                        log_entry[sketch][result['status']] = []
+                    if result['status'] == 'success':
+                        log_entry[sketch]['success'].append(result['board'])
+                    elif result['status'] == 'fail':
+                        log_entry[sketch]['fail'].append(result['board'])
+                        test_status = 'F'
+                    elif result['status'] == 'open_fail':
+                        log_entry[sketch]['open_fail'] = True
+                        openFailFlag = True
+                        test_status = 'O'
+                    elif result['status'] == 'error':
+                        log_entry[sketch]['error'].append({
+                            'board': result['board'],
+                            'error': result['message']
+                        })
+                        test_status = 'E'
+                    elif result['status'] == 'unsupported':
+                        log_entry[sketch]['unsupported'] = True
+                        test_status = 'U'
+
+                # Update Disqus comments.
+                current_date = strftime('%Y-%m-%d', log_time)
+
+                if comment and compile_type in ['library', 'target_library']:
+                    log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
+
+                self.create_log(log_file, log_entry, compile_type)
+
+                # Display progress
+                sys.stdout.write(test_status)
+                sys.stdout.flush()
+
+                toc = time.time()
+                if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
+                    print '\nStopping tests to avoid saucelabs timeout'
+                    print 'Test duration:', int(toc - tic), 'sec'
+                    return
+
+        # Generate a report if requested.
+        if compile_type != 'target_library' and create_report and self.run_full_compile_tests:
+            report_creator(compile_type, log_entry, log_file)
+        print '\nTest duration:', int(toc - tic), 'sec'
+
     def compile_all_sketches(self, url, selector, **kwargs):
         """Compiles all sketches on the page at `url`. `selector` is a CSS selector
         that should select all relevant <a> tags containing links to sketches.
