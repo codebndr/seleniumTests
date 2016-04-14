@@ -23,7 +23,6 @@ $.each(accordionHeadings, function (key, value) {{
         librariesMap[libraryName].push(href);
     }});
 }});
-console.log(librariesMap);
 return librariesMap;
 """
 class TestLibraryExamples(SeleniumTestCase):
