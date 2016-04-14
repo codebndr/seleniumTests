@@ -113,11 +113,6 @@ class TestSketch(SeleniumTestCase):
         field """
         self.open_project()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
-            expected_conditions.visibility_of_element_located(
-                (By.CSS_SELECTOR, "#editor-loading-screen")
-                )
-            )
-        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.invisibility_of_element_located(
                 (By.CSS_SELECTOR, "#editor-loading-screen")
                 )
