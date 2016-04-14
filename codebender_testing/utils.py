@@ -409,13 +409,22 @@ class CodebenderSeleniumBot(object):
         self.open('/')
         try:
             created_project = self.get_element(By.LINK_TEXT, project_name)
-            delete_button_li = created_project.find_element_by_xpath('..')
-            delete_button = delete_button_li.find_element_by_css_selector('.delete-sketch')
+            delete_button_li = created_project.find_element_by_xpath('../..')
+            delete_button = delete_button_li.find_element_by_css_selector('.sketch-block-controls :nth-child(3)')
             delete_button.click()
-            popup_delete_button = self.get_element(By.ID, 'deleteProjectButton')
+            popup_delete_button = self.get_element(By.CSS_SELECTOR, '#home-delete-sketch-modal :nth-child(4) :nth-child(2)')
             popup_delete_button.click()
+            popup_delete_message = self.get_element(By.CSS_SELECTOR, '#home-delete-sketch-modal .modal-footer.delete-sketch-modal-footer .delete-sketch-modal-message.success')
+            assert popup_delete_message.text == "Sketch was deleted!"
+            popup_close_button = self.get_element(By.CSS_SELECTOR, '#home-delete-sketch-modal :nth-child(4) :nth-child(3)')
+            popup_close_button.click()
+            WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+                expected_conditions.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, "#home-delete-sketch-modal")
+                )
+            )
         except:
-            pass
+            print "An action failed during deletion process of project:", project_name
 
     def resume_log (self, logfile, compile_type, sketches):
         """Resume previous log, if any. Coves 3 cases:
@@ -508,7 +517,7 @@ class CodebenderSeleniumBot(object):
 
         return (urls_to_visit, log_entry, log_file, log_time)
 
-    def create_log (self, log_file, log_entry,compile_type):
+    def create_log (self, log_file, log_entry, compile_type):
         # Dump the test results to `log_file`.
         with open(log_file, 'w') as f:
             f.write(jsondump(log_entry))
@@ -530,6 +539,12 @@ class CodebenderSeleniumBot(object):
         tic = time.time()
         for url in urls_to_visit:
             self.open(url)
+            url_name = url.split('/')[-1]
+            name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
+            name = re.sub('[()]', '', name).split('.')[0]
+            if (name != url_name):
+                print "Didn't open url: ", url
+
             test_status = True
             if library_re.match(url) and self.driver.current_url == 'https://codebender.cc/libraries':
                 test_status = False
@@ -607,6 +622,122 @@ class CodebenderSeleniumBot(object):
         self.driver.switch_to_default_content()
 
         return compilation_results
+
+    def comment_compile_libraries_examples(self, sketches, library_examples_dic={}, iframe=False, project_view=False,
+                                           logfile=None, compile_type='sketch', create_report=False, comment=False):
+
+        urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, sketches)
+
+        # Initialize DisqusWrapper.
+        disqus_wrapper = DisqusWrapper(log_time)
+        print "urls to visit:", urls_to_visit
+
+        print '\nCommenting and compiling:', len(urls_to_visit), 'libraries and examples.'
+
+        total_sketches = len(urls_to_visit)
+        tic = time.time()
+        library_re = re.compile(r'^.+/library/.+$')
+
+        for url in urls_to_visit:
+
+            if library_re.match(url):
+                library = url.split('/')[-1]
+                for key, value in library_examples_dic.iteritems():
+                    if(key == library and len(value) == 0):
+                        if logfile is None or not self.run_full_compile_tests:
+                            toc = time.time()
+                            continue
+
+                        # Update Disqus comments.
+                        current_date = strftime('%Y-%m-%d', log_time)
+                        if comment and compile_type in ['library', 'target_library']:
+                            library=key
+                            examples=False
+                            log_entry = disqus_wrapper.handle_library_comment(library, current_date, log_entry, examples)
+                        self.create_log(log_file, log_entry, compile_type)
+                        toc = time.time()
+                        if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
+                            print '\nStopping tests to avoid saucelabs timeout'
+                            print 'Test duration:', int(toc - tic), 'sec'
+                            return
+            else:
+                sketch = url
+                # Read the boards map in case current sketch/example requires a special board configuration.
+                boards = BOARDS_DB['default_boards']
+                url_fragments = urlparse(sketch)
+                if url_fragments.path in BOARDS_DB['special_boards']:
+                    boards = BOARDS_DB['special_boards'][url_fragments.path]
+
+                if len(boards) > 0:
+                    # Run Verify.
+                    results = self.compile_sketch(sketch, boards, iframe=iframe, project_view=project_view)
+                else:
+                    results = [
+                        {
+                            'status': 'unsupported'
+                        }
+                    ]
+
+                """If test is not running in full mode (-F option) or logfile is None
+                no logs are produced inside /logs directory and we continue with sketches
+                compilation.
+                """
+                if logfile is None or not self.run_full_compile_tests:
+                    toc = time.time()
+                    continue
+
+                # Register current URL into log.
+                if sketch not in log_entry:
+                    log_entry[sketch] = {}
+
+                test_status = '.'
+
+                # Log the compilation results.
+                openFailFlag = False
+                for result in results:
+                    if result['status'] in ['success', 'fail', 'error'] and result['status'] not in log_entry[sketch]:
+                        log_entry[sketch][result['status']] = []
+                    if result['status'] == 'success':
+                        log_entry[sketch]['success'].append(result['board'])
+                    elif result['status'] == 'fail':
+                        log_entry[sketch]['fail'].append(result['board'])
+                        test_status = 'F'
+                    elif result['status'] == 'open_fail':
+                        log_entry[sketch]['open_fail'] = True
+                        openFailFlag = True
+                        test_status = 'O'
+                    elif result['status'] == 'error':
+                        log_entry[sketch]['error'].append({
+                            'board': result['board'],
+                            'error': result['message']
+                        })
+                        test_status = 'E'
+                    elif result['status'] == 'unsupported':
+                        log_entry[sketch]['unsupported'] = True
+                        test_status = 'U'
+
+                # Update Disqus comments.
+                current_date = strftime('%Y-%m-%d', log_time)
+
+                if comment and compile_type in ['library', 'target_library']:
+                    log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
+
+                self.create_log(log_file, log_entry, compile_type)
+
+                # Display progress
+                sys.stdout.write(test_status)
+                sys.stdout.flush()
+
+                toc = time.time()
+                if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
+                    print '\nStopping tests to avoid saucelabs timeout'
+                    print 'Test duration:', int(toc - tic), 'sec'
+                    return
+
+        # Generate a report if requested.
+        if compile_type != 'target_library' and create_report and self.run_full_compile_tests:
+            report_creator(compile_type, log_entry, log_file)
+        print '\nTest duration:', int(toc - tic), 'sec'
 
     def compile_all_sketches(self, url, selector, **kwargs):
         """Compiles all sketches on the page at `url`. `selector` is a CSS selector
@@ -695,12 +826,12 @@ class CodebenderSeleniumBot(object):
                     log_entry[sketch]['unsupported'] = True
                     test_status = 'U'
 
-            self.create_log(log_file,log_entry, compile_type)
-
             # Update Disqus comments.
             current_date = strftime('%Y-%m-%d', log_time)
             if comment and compile_type in ['library', 'target_library']:
                 log_entry = disqus_wrapper.update_comment(sketch, results, current_date, log_entry, openFailFlag, total_sketches)
+
+            self.create_log(log_file, log_entry, compile_type)
 
             # Display progress
             sys.stdout.write(test_status)
@@ -726,11 +857,52 @@ class CodebenderSeleniumBot(object):
             )
         return self.driver.execute_script(script)
 
-    def create_sketch(self, name):
+    def create_sketch(self, privacy, name, description):
         """Creates a sketch with a given name"""
         createSketchBtn = self.driver.find_element_by_id('create_sketch_btn')
         createSketchBtn.click()
-        sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CSS_SELECTOR, "#create-sketch-modal")
+                )
+            )
+
+        self.change_privacy(privacy)
+
+        self.change_name(name)
+
+        self.change_short_description(description)
+
+        createBtn = self.get_element(By.ID, 'create-sketch-modal-action-button')
+        createBtn.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+                expected_conditions.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, "#editor-loading-screen")
+                )
+            )
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, "#editor_heading_project_name")
+            )
+        )
+
+    def change_privacy(self, privacy):
+        privateRadioButton = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-type-controls [value="public"]')
+        if privacy == 'private':
+            privateRadioButton = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-type-controls [value="private"]')
+        privateRadioButton.click()
+
+    def change_name(self, name):
+        print name
+        nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal .modal-body [id="create-sketch-name"')
+        print nameField
+        nameField.clear()
+        nameField.send_keys(name)
+        nameField.send_keys(Keys.ENTER)
+
+    def change_name_editor(self, name):
+        print "inside change name"
+        sketchHeading = self.driver.find_element_by_id('editor_heading_project_name')
         sketchHeading.click()
         renameInput = '#editor_heading_project_name input'
         headingInput = self.get_element(By.CSS_SELECTOR, renameInput)
@@ -747,6 +919,40 @@ class CodebenderSeleniumBot(object):
                 (By.ID, "operation_output"), 'Name successfully changed!'
             )
         )
+
+    def change_short_description(self, description):
+        nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-sort-description')
+        nameField.clear()
+        nameField.send_keys(description)
+        nameField.send_keys(Keys.ENTER)
+
+    def change_short_description_editor(self, description):
+        editDescription = self.get_element(By.CSS_SELECTOR,'.short-description-edit')
+        editDescription.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.visibility_of(
+                self.get_element(By.CSS_SELECTOR, '#editor-description-modal')
+            )
+        )
+        shortDescriptionField = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-body [id="short-description-modal-input"]')
+        shortDescriptionField.clear()
+        shortDescriptionField.send_keys(description)
+        shortDescriptionField.send_keys(Keys.ENTER)
+        saveButton = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-footer .btn-success')
+        saveButton.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.text_to_be_present_in_element(
+                (By.CSS_SELECTOR,'#editor-description-modal .modal-footer #editor-description-modal-message'), 'Sketch description saved.'
+            )
+        )
+        closeButton = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-footer .btn-danger')
+        closeButton.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.CSS_SELECTOR, '#editor-description-modal')
+            )
+        )
+
 
     def check_iframe(self):
         """Returns the contents of an iframe [project_name, user_name, sketch_contents]"""

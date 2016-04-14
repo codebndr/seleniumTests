@@ -7,10 +7,11 @@ from codebender_testing.config import STAGING_SITE_URL
 from codebender_testing.config import COMPILE_TESTER_STAGING_URL
 from selenium.webdriver.common.by import By
 from codebender_testing.utils import SeleniumTestCase
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
 import os
 import pytest
 import time
-
 
 class TestCompileTester(SeleniumTestCase):
 
@@ -31,15 +32,50 @@ class TestCompileTester(SeleniumTestCase):
         """Tests that we can upload all of cb_compile_tester's projects
         (stored locally in test_data/cb_compile_tester), compile them,
         and finally delete them."""
+
+        WebDriverWait(self.driver, 30).until(
+                expected_conditions.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, "#home-page-loading-screen")
+                )
+            )
+
         filenames = os.listdir(COMPILE_TESTER_DIR)
         test_files = [os.path.join(COMPILE_TESTER_DIR, name) for name in filenames]
-        projects = [self.upload_project('#uploadFolderZip form', fname,
-            os.path.splitext(os.path.basename(fname))[0]) for fname
-            in test_files]
+
+        for test_file in test_files:
+            # Click the Upload Sketch button.
+            upload_button = self.get_element(By.CSS_SELECTOR, '#sketch-upload-button')
+            upload_button.click()
+            # Click the Upload zip option from the dropdown menu.
+            sketch_upload_zip = self.get_element(By.CSS_SELECTOR, '#upload-sketch-zip')
+            sketch_upload_zip.click()
+
+            upload_name = self.upload_project('#dropzoneForm',
+                                             test_file,
+                                             os.path.splitext(os.path.basename(test_file))[0])
+            # Wait for the success mark to appear.
+            WebDriverWait(self.driver, 30).until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CSS_SELECTOR, ".dz-success-mark")
+                )
+            )
+            # Close the modal.
+            close_btn = self.get_element(By.CSS_SELECTOR, "#home-upload-sketch-modal .btn-danger")
+            close_btn.click()
+            # Wait for the modal to close.
+            WebDriverWait(self.driver, 30).until(
+                expected_conditions.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, ".modal-backdrop fade")
+                )
+            )
+            selector = '#project_list li[data-name="'+ upload_name +'"]'
+            project_uploaded = self.get_element(By.CSS_SELECTOR, selector).text.split('\n')[0]
+            assert upload_name == project_uploaded, "upload_name is different from project_uploaded!"
+
         flag = True
         while flag:
             uploaded_sketches = self.get_elements(By.CSS_SELECTOR, '#project_list > li')
-            if len(uploaded_sketches) >= len(projects):
+            if len(uploaded_sketches) >= len(test_files):
                 flag = False
                 break
             time.sleep(1)
@@ -48,5 +84,7 @@ class TestCompileTester(SeleniumTestCase):
             iframe=False,
             compile_type='sketch',
             create_report=True, logfile=COMPILE_TESTER_LOGFILE_STAGING)
-        for name in projects:
+
+        for name in filenames:
+            name = name.split('.')[0]
             self.delete_project(name.replace(" ", "-"))

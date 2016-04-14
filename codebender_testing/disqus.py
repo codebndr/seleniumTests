@@ -72,6 +72,8 @@ class DisqusWrapper:
             library = library_match.group(1)
 
         #Check if the currently compiled example belongs to the same library as the previous one.
+        # To do so we check if value of library is the same with self.last library value which is updated
+        # every time that we log the results of a compiled example.
         if library != self.last_library:
             library_to_comment = library
 
@@ -86,7 +88,7 @@ class DisqusWrapper:
 
         return log_entry
 
-    def handle_library_comment(self, library, current_date, log):
+    def handle_library_comment(self, library, current_date, log, examples=True):
         url = '/library/' + library
         identifier = 'ident:' + url
 
@@ -108,7 +110,10 @@ class DisqusWrapper:
                                             thread=identifier)
             if paginator:
                 comment_updated = False
+
                 new_message = self.messages['library'].replace('TEST_DATE', current_date)
+                if examples==False:
+                    new_message = self.messages['library_no_examples'].replace('TEST_DATE', current_date)
 
                 for thread in paginator:
 
