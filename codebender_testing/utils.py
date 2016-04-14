@@ -878,6 +878,23 @@ class CodebenderSeleniumBot(object):
                 (By.CSS_SELECTOR, "#editor_heading_project_name")
             )
         )
+
+    def change_privacy(self, privacy):
+        privateRadioButton = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-type-controls [value="public"]')
+        if privacy == 'private':
+            privateRadioButton = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-type-controls [value="private"]')
+        privateRadioButton.click()
+
+    def change_name(self, name):
+        print name
+        nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal .modal-body [id="create-sketch-name"')
+        print nameField
+        nameField.clear()
+        nameField.send_keys(name)
+        nameField.send_keys(Keys.ENTER)
+
+    def change_name_editor(self, name):
+        print "inside change name"
         sketchHeading = self.driver.find_element_by_id('editor_heading_project_name')
         sketchHeading.click()
         renameInput = '#editor_heading_project_name input'
@@ -895,6 +912,40 @@ class CodebenderSeleniumBot(object):
                 (By.ID, "operation_output"), 'Name successfully changed!'
             )
         )
+
+    def change_short_description(self, description):
+        nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-sort-description')
+        nameField.clear()
+        nameField.send_keys(description)
+        nameField.send_keys(Keys.ENTER)
+
+    def change_short_description_editor(self, description):
+        editDescription = self.get_element(By.CSS_SELECTOR,'.short-description-edit')
+        editDescription.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.visibility_of(
+                self.get_element(By.CSS_SELECTOR, '#editor-description-modal')
+            )
+        )
+        shortDescriptionField = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-body [id="short-description-modal-input"]')
+        shortDescriptionField.clear()
+        shortDescriptionField.send_keys(description)
+        shortDescriptionField.send_keys(Keys.ENTER)
+        saveButton = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-footer .btn-success')
+        saveButton.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.text_to_be_present_in_element(
+                (By.CSS_SELECTOR,'#editor-description-modal .modal-footer #editor-description-modal-message'), 'Sketch description saved.'
+            )
+        )
+        closeButton = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-footer .btn-danger')
+        closeButton.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.CSS_SELECTOR, '#editor-description-modal')
+            )
+        )
+
 
     def check_iframe(self):
         """Returns the contents of an iframe [project_name, user_name, sketch_contents]"""
