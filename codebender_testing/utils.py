@@ -656,7 +656,7 @@ class CodebenderSeleniumBot(object):
                             log_entry = disqus_wrapper.handle_library_comment(library, current_date, log_entry, examples)
                         self.create_log(log_file, log_entry, compile_type)
                         toc = time.time()
-                        if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
+                        if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
                             print '\nStopping tests to avoid saucelabs timeout'
                             print 'Test duration:', int(toc - tic), 'sec'
                             return
@@ -729,7 +729,7 @@ class CodebenderSeleniumBot(object):
                 sys.stdout.flush()
 
                 toc = time.time()
-                if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
+                if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
                     print '\nStopping tests to avoid saucelabs timeout'
                     print 'Test duration:', int(toc - tic), 'sec'
                     return
