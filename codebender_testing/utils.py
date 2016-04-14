@@ -643,7 +643,7 @@ class CodebenderSeleniumBot(object):
             if library_re.match(url):
                 library = url.split('/')[-1]
                 for key, value in library_examples_dic.iteritems():
-                    if(key==library and len(value)==0):
+                    if(key == library and len(value) == 0):
                         if logfile is None or not self.run_full_compile_tests:
                             toc = time.time()
                             continue
