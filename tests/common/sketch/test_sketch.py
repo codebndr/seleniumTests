@@ -8,6 +8,7 @@ from codebender_testing.config import TEST_PROJECT_NAME, TIMEOUT
 from codebender_testing.utils import SeleniumTestCase
 from codebender_testing.utils import SELECT_BOARD_SCRIPT
 from codebender_testing.utils import throttle_compile
+from selenium.webdriver.common.keys import Keys
 
 
 # How long to wait before we give up on trying to assess the result of commands
@@ -25,7 +26,13 @@ class TestSketch(SeleniumTestCase):
     def create_test_project(self, tester_login):
         """Makes sure we are logged in and have a project open before
         performing any of these tests."""
-        self.create_sketch(TEST_PROJECT_NAME)
+        self.create_sketch('private' , 'project', 'short description')
+
+    def test_rename_project(self):
+        self.change_name_editor(TEST_PROJECT_NAME)
+
+    def test_change_short_description(self):
+        self.change_short_description_editor('decription')
 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
@@ -102,7 +109,7 @@ class TestSketch(SeleniumTestCase):
         clone_link.click()
         project_name = self.get_element(By.ID, 'editor_heading_project_name')
         # Here, I use `startswith` in case the user has a bunch of
-        # projects like "test_project copy copy copy" ...
+        # projects like "test_project copy copy copy"
         assert project_name.text.startswith("%s copy" % TEST_PROJECT_NAME)
 
         # Cleanup: delete the project we just created.

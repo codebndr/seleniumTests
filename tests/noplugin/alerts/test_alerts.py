@@ -14,7 +14,7 @@ class TestAlerts(SeleniumTestCase):
     def create_test_project(self, tester_login):
         """Makes sure we are logged in and have a project open before
         performing any of these tests."""
-        self.create_sketch(TEST_PROJECT_NAME)
+        self.create_sketch('private' , TEST_PROJECT_NAME, 'short description')
 
     @pytest.mark.does_not_require_extension
     def test_alert(self):

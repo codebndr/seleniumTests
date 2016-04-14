@@ -857,17 +857,24 @@ class CodebenderSeleniumBot(object):
             )
         return self.driver.execute_script(script)
 
-    def create_sketch(self, name):
+    def create_sketch(self, privacy, name, description):
         """Creates a sketch with a given name"""
         createSketchBtn = self.driver.find_element_by_id('create_sketch_btn')
         createSketchBtn.click()
-        createBtn = self.get_element(By.ID, 'create-sketch-modal-action-button')
-        createBtn.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
                 expected_conditions.visibility_of_element_located(
-                    (By.CSS_SELECTOR, "#editor-loading-screen")
+                    (By.CSS_SELECTOR, "#create-sketch-modal")
                 )
             )
+
+        self.change_privacy(privacy)
+
+        self.change_name(name)
+
+        self.change_short_description(description)
+
+        createBtn = self.get_element(By.ID, 'create-sketch-modal-action-button')
+        createBtn.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
                 expected_conditions.invisibility_of_element_located(
                     (By.CSS_SELECTOR, "#editor-loading-screen")
