@@ -539,6 +539,12 @@ class CodebenderSeleniumBot(object):
         tic = time.time()
         for url in urls_to_visit:
             self.open(url)
+            url_name = url.split('/')[-1]
+            name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
+            name = re.sub('[()]', '', name).split('.')[0]
+            if (name != url_name):
+                print "Didn't open url: ", url
+
             test_status = True
             if library_re.match(url) and self.driver.current_url == 'https://codebender.cc/libraries':
                 test_status = False
