@@ -633,7 +633,6 @@ class CodebenderSeleniumBot(object):
 
         # Initialize DisqusWrapper.
         disqus_wrapper = DisqusWrapper(log_time)
-        print "urls to visit:", urls_to_visit
 
         print '\nCommenting and compiling:', len(urls_to_visit), 'libraries and examples.'
 
