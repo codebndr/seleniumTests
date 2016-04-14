@@ -641,7 +641,7 @@ class CodebenderSeleniumBot(object):
         for url in urls_to_visit:
 
             if library_re.match(url):
-                library =url.split('/')[-1]
+                library = url.split('/')[-1]
                 for key, value in library_examples_dic.iteritems():
                     if(key==library and len(value)==0):
                         if logfile is None or not self.run_full_compile_tests:
