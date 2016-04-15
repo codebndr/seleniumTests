@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# common
+python ../seleniumbender.py common --target=live --saucelabs --capabilities=capabilities_firefox.yaml --config=../config.cfg
+python ../seleniumbender.py common --target=live --saucelabs --capabilities=capabilities_chrome.yaml --config=../config.cfg
+# walkthrough
+python ../seleniumbender.py walkthrough --target=live --saucelabs --capabilities=capabilities_firefox.yaml --config=../config.cfg
+python ../seleniumbender.py walkthrough --target=live --saucelabs --capabilities=capabilities_chrome.yaml --config=../config.cfg
+# noplugin
+python ../seleniumbender.py noplugin --target=live --saucelabs --capabilities=capabilities_firefox.yaml --config=../config.cfg
+python ../seleniumbender.py noplugin --target=live --saucelabs --capabilities=capabilities_chrome.yaml --config=../config.cfg

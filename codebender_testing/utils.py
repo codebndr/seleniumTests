@@ -532,21 +532,24 @@ class CodebenderSeleniumBot(object):
         compile_type = 'fetch'
         urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, examples_libraries)
 
-        library_re = re.compile(r'^https://codebender.cc/library/.+$')
-        example_re = re.compile(r'^https://codebender.cc/example/.+/.+$')
+        libraries_re = re.compile(r'/libraries$')
+        library_re = re.compile(r'/library/.+$')
+        example_re = re.compile(r'/example/.+/.+$')
 
         print '\nVisiting:', len(urls_to_visit), 'URLs'
         tic = time.time()
         for url in urls_to_visit:
             self.open(url)
-            url_name = url.split('/')[-1]
-            name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
-            name = re.sub('[()]', '', name).split('.')[0]
-            if (name != url_name):
-                print "Didn't open url: ", url
+            self.get_element(By.CSS_SELECTOR, '#mycontainer h1')
+            if library_re.match(url):
+                url_name = url.split('/')[-1]
+                name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
+                name = re.sub('[()]', '', name).split('.')[0]
+                if (name != url_name):
+                    print "Didn't open url: ", url
 
             test_status = True
-            if library_re.match(url) and self.driver.current_url == 'https://codebender.cc/libraries':
+            if library_re.match(url) and libraries_re.match(self.driver.current_url):
                 test_status = False
             elif example_re.match(url) and 'Sorry! The example could not be fetched.' in self.driver.page_source:
                 test_status = False
@@ -630,7 +633,6 @@ class CodebenderSeleniumBot(object):
 
         # Initialize DisqusWrapper.
         disqus_wrapper = DisqusWrapper(log_time)
-        print "urls to visit:", urls_to_visit
 
         print '\nCommenting and compiling:', len(urls_to_visit), 'libraries and examples.'
 
