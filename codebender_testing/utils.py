@@ -370,11 +370,11 @@ class CodebenderSeleniumBot(object):
         return self.driver.find_elements(*locator)
 
     def find(self, selector):
-        """Alias for `self.get_element(By.CSS_SELECTOR, selector)`."""
+        """Alias for self.get_element(By.CSS_SELECTOR, selector)."""
         return self.get_element(By.CSS_SELECTOR, selector)
 
     def find_all(self, selector):
-        """Alias for `self.get_elements(By.CSS_SELECTOR, selector)`."""
+        """Alias for self.get_elements(By.CSS_SELECTOR, selector)."""
         return self.get_elements(By.CSS_SELECTOR, selector)
 
     def dropzone_upload(self, selector, fname):
