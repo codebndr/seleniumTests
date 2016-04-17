@@ -861,7 +861,7 @@ class CodebenderSeleniumBot(object):
 
     def create_sketch(self, privacy, name, description):
         """Creates a sketch with a given name"""
-        createSketchBtn = self.driver.find_element_by_id('create_sketch_btn')
+        createSketchBtn = self.get_element(By.ID, 'create_sketch_btn')
         createSketchBtn.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
                 expected_conditions.visibility_of_element_located(
@@ -903,8 +903,7 @@ class CodebenderSeleniumBot(object):
         nameField.send_keys(Keys.ENTER)
 
     def change_name_editor(self, name):
-        print "inside change name"
-        sketchHeading = self.driver.find_element_by_id('editor_heading_project_name')
+        sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
         sketchHeading.click()
         renameInput = '#editor_heading_project_name input'
         headingInput = self.get_element(By.CSS_SELECTOR, renameInput)
@@ -954,7 +953,6 @@ class CodebenderSeleniumBot(object):
                 (By.CSS_SELECTOR, '#editor-description-modal')
             )
         )
-
 
     def check_iframe(self):
         """Returns the contents of an iframe [project_name, user_name, sketch_contents]"""
