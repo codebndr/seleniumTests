@@ -32,7 +32,7 @@ class TestSketch(SeleniumTestCase):
         self.change_name_editor(TEST_PROJECT_NAME)
 
     def test_change_short_description(self):
-        self.change_short_description_editor('decription')
+        self.change_short_description_editor('description')
 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
