@@ -138,8 +138,7 @@ class TestSketch(SeleniumTestCase):
         )
         create_field = self.get_element(By.ID, 'createfield')
         create_field.send_keys('test_file.txt')
-        create_button = self.get_element(By.ID, 'createbutton')
-        create_button.click()
+        create_field.send_keys(Keys.ENTER)
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.invisibility_of_element_located(
                 (By.ID, "creationModal")
