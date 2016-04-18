@@ -32,7 +32,7 @@ class TestSketch(SeleniumTestCase):
         self.change_name_editor(TEST_PROJECT_NAME)
 
     def test_change_short_description(self):
-        self.change_short_description_editor('decription')
+        self.change_short_description_editor('description')
 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
@@ -138,8 +138,7 @@ class TestSketch(SeleniumTestCase):
         )
         create_field = self.get_element(By.ID, 'createfield')
         create_field.send_keys('test_file.txt')
-        create_button = self.get_element(By.ID, 'createbutton')
-        create_button.click()
+        create_field.send_keys(Keys.ENTER)
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.invisibility_of_element_located(
                 (By.ID, "creationModal")

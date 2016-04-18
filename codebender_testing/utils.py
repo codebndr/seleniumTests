@@ -370,11 +370,11 @@ class CodebenderSeleniumBot(object):
         return self.driver.find_elements(*locator)
 
     def find(self, selector):
-        """Alias for `self.get_element(By.CSS_SELECTOR, selector)`."""
+        """Alias for self.get_element(By.CSS_SELECTOR, selector)."""
         return self.get_element(By.CSS_SELECTOR, selector)
 
     def find_all(self, selector):
-        """Alias for `self.get_elements(By.CSS_SELECTOR, selector)`."""
+        """Alias for self.get_elements(By.CSS_SELECTOR, selector)."""
         return self.get_elements(By.CSS_SELECTOR, selector)
 
     def dropzone_upload(self, selector, fname):
@@ -540,7 +540,7 @@ class CodebenderSeleniumBot(object):
         tic = time.time()
         for url in urls_to_visit:
             self.open(url)
-            self.get_element(By.CSS_SELECTOR, '#mycontainer h1')
+            self.get_element(By.CSS_SELECTOR, '#mycontainer')
             if library_re.match(url):
                 url_name = url.split('/')[-1]
                 name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
@@ -861,7 +861,7 @@ class CodebenderSeleniumBot(object):
 
     def create_sketch(self, privacy, name, description):
         """Creates a sketch with a given name"""
-        createSketchBtn = self.driver.find_element_by_id('create_sketch_btn')
+        createSketchBtn = self.get_element(By.ID, 'create_sketch_btn')
         createSketchBtn.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
                 expected_conditions.visibility_of_element_located(
@@ -903,8 +903,7 @@ class CodebenderSeleniumBot(object):
         nameField.send_keys(Keys.ENTER)
 
     def change_name_editor(self, name):
-        print "inside change name"
-        sketchHeading = self.driver.find_element_by_id('editor_heading_project_name')
+        sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
         sketchHeading.click()
         renameInput = '#editor_heading_project_name input'
         headingInput = self.get_element(By.CSS_SELECTOR, renameInput)
@@ -954,7 +953,6 @@ class CodebenderSeleniumBot(object):
                 (By.CSS_SELECTOR, '#editor-description-modal')
             )
         )
-
 
     def check_iframe(self):
         """Returns the contents of an iframe [project_name, user_name, sketch_contents]"""
