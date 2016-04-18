@@ -540,7 +540,7 @@ class CodebenderSeleniumBot(object):
         tic = time.time()
         for url in urls_to_visit:
             self.open(url)
-            self.get_element(By.CSS_SELECTOR, '#mycontainer h1')
+            self.get_element(By.CSS_SELECTOR, '#mycontainer')
             if library_re.match(url):
                 url_name = url.split('/')[-1]
                 name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
