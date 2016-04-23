@@ -550,7 +550,7 @@ class CodebenderSeleniumBot(object):
                 url_name = url.split('/')[-1]
                 name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
                 name = re.sub('[()]', '', name).split('.')[0]
-                if (name != url_name):
+                if name != url_name:
                     print "Didn't open url: ", url
 
             test_status = True
