@@ -71,18 +71,18 @@ class DisqusWrapper:
         if library_match:
             library = library_match.group(1)
 
-        #Check if the currently compiled example belongs to the same library as the previous one.
+        # Check if the currently compiled example belongs to the same library as the previous one.
         # To do so we check if value of library is the same with self.last library value which is updated
         # every time that we log the results of a compiled example.
         if library != self.last_library:
             library_to_comment = library
 
-        #Check if we should add a comment to the library.
+        # Check if we should add a comment to the library.
         if library_to_comment and library not in self.examples_without_library:
             log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
 
         self.last_library = library
-        #Add a comment to the currently compiled library example.
+        # Add a comment to the currently compiled library example.
         if not openFailFlag:
             log_entry = self.handle_example_comment(sketch, results, current_date, log_entry)
 
@@ -112,7 +112,7 @@ class DisqusWrapper:
                 comment_updated = False
 
                 new_message = self.messages['library'].replace('TEST_DATE', current_date)
-                if examples==False:
+                if examples == False:
                     new_message = self.messages['library_no_examples'].replace('TEST_DATE', current_date)
 
                 for thread in paginator:
@@ -120,13 +120,13 @@ class DisqusWrapper:
                     # Check if library has already a comment.
                     post_id, existing_message = self.get_posts(thread['id'])
 
-                    #If library already has a comment, update it.
+                    # If library already has a comment, update it.
                     if post_id and existing_message:
                         log[url]['comment'] = self.update_post(post_id, new_message)
                         comment_updated = True
                         break
 
-                #If library doesn't have a comment, create it.
+                # If library doesn't have a comment, create it.
                 if not comment_updated:
                     log[url]['comment'] = self.create_post(identifier, new_message)
 

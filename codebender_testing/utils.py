@@ -93,6 +93,11 @@ BOARDS_PATH = get_path('data', BOARDS_FILE)
 with open(BOARDS_PATH) as f:
     BOARDS_DB = simplejson.loads(f.read())
 
+# Display progress
+def display_progress(status):
+    sys.stdout.write(status)
+    sys.stdout.flush()
+
 def read_last_log(compile_type):
     logs = os.listdir(get_path('logs'))
     logs_re = re.compile(r'.+cb_compile_tester.+')
@@ -545,7 +550,7 @@ class CodebenderSeleniumBot(object):
                 url_name = url.split('/')[-1]
                 name = self.get_element(By.CSS_SELECTOR, '#mycontainer h1 small').text
                 name = re.sub('[()]', '', name).split('.')[0]
-                if (name != url_name):
+                if name != url_name:
                     print "Didn't open url: ", url
 
             test_status = True
@@ -641,11 +646,11 @@ class CodebenderSeleniumBot(object):
         library_re = re.compile(r'^.+/library/.+$')
 
         for url in urls_to_visit:
-
             if library_re.match(url):
                 library = url.split('/')[-1]
-                for key, value in library_examples_dic.iteritems():
-                    if(key == library and len(value) == 0):
+                try:
+                    # Comment libraries without examples
+                    if len(library_examples_dic[library]) == 0:
                         if logfile is None or not self.run_full_compile_tests:
                             toc = time.time()
                             continue
@@ -653,15 +658,24 @@ class CodebenderSeleniumBot(object):
                         # Update Disqus comments.
                         current_date = strftime('%Y-%m-%d', log_time)
                         if comment and compile_type in ['library', 'target_library']:
-                            library=key
-                            examples=False
+                            self.open(url)
+                            self.get_element(By.CSS_SELECTOR, '#mycontainer h1')
+                            examples = False
                             log_entry = disqus_wrapper.handle_library_comment(library, current_date, log_entry, examples)
                         self.create_log(log_file, log_entry, compile_type)
-                        toc = time.time()
-                        if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
-                            print '\nStopping tests to avoid saucelabs timeout'
-                            print 'Test duration:', int(toc - tic), 'sec'
-                            return
+
+                        test_status = '.'
+                        if not log_entry[url]['comment']:
+                            test_status = 'F'
+                        display_progress(test_status)
+                except Exception as error:
+                    print error
+
+                toc = time.time()
+                if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
+                    print '\nStopping tests to avoid saucelabs timeout'
+                    print 'Test duration:', int(toc - tic), 'sec'
+                    return
             else:
                 sketch = url
                 # Read the boards map in case current sketch/example requires a special board configuration.
@@ -726,9 +740,7 @@ class CodebenderSeleniumBot(object):
 
                 self.create_log(log_file, log_entry, compile_type)
 
-                # Display progress
-                sys.stdout.write(test_status)
-                sys.stdout.flush()
+                display_progress(test_status)
 
                 toc = time.time()
                 if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
@@ -835,9 +847,7 @@ class CodebenderSeleniumBot(object):
 
             self.create_log(log_file, log_entry, compile_type)
 
-            # Display progress
-            sys.stdout.write(test_status)
-            sys.stdout.flush()
+            display_progress(test_status)
 
             toc = time.time()
             if toc - tic >= SAUCELABS_TIMEOUT_SECONDS:
