@@ -63,13 +63,14 @@ class DisqusWrapper:
         `self.last_library`: The library in which belongs the previously compiled example.
         `library_to_comment`: The library in which a comment should be added.
         """
-        library_match = re.match(r'.+\/example\/(.+)\/.+', sketch)
+        library_match = re.match(r'(.+)\/example\/(.+)\/.+', sketch)
         library = None
         library_to_comment = None
 
         # Set the library in which belongs the currently compiled example.
         if library_match:
-            library = library_match.group(1)
+            library = library_match.group(2)
+            domain = library_match.group(1)
 
         # Check if the currently compiled example belongs to the same library as the previous one.
         # To do so we check if value of library is the same with self.last library value which is updated
@@ -79,7 +80,7 @@ class DisqusWrapper:
 
         # Check if we should add a comment to the library.
         if library_to_comment and library not in self.examples_without_library:
-            log_entry = self.handle_library_comment(library_to_comment, current_date, log_entry)
+            log_entry = self.handle_library_comment(library_to_comment, domain, current_date, log_entry)
 
         self.last_library = library
         # Add a comment to the currently compiled library example.
@@ -88,14 +89,15 @@ class DisqusWrapper:
 
         return log_entry
 
-    def handle_library_comment(self, library, current_date, log, examples=True):
+    def handle_library_comment(self, library, domain, current_date, log, examples=True):
         url = '/library/' + library
         identifier = 'ident:' + url
+        full_url = domain + url
 
         if url not in log:
-            log[url] = {}
+            log[full_url] = {}
         try:
-            log[url]['comment'] = False
+            log[full_url]['comment'] = False
 
             """ Returns a Paginator object that matches the desired criteria:
             `self.disqus.api.threads.list`: Returns a list containg all urls in which Disqus loaded.
@@ -122,17 +124,17 @@ class DisqusWrapper:
 
                     # If library already has a comment, update it.
                     if post_id and existing_message:
-                        log[url]['comment'] = self.update_post(post_id, new_message)
+                        log[full_url]['comment'] = self.update_post(post_id, new_message)
                         comment_updated = True
                         break
 
                 # If library doesn't have a comment, create it.
                 if not comment_updated:
-                    log[url]['comment'] = self.create_post(identifier, new_message)
+                    log[full_url]['comment'] = self.create_post(identifier, new_message)
 
         except Exception as error:
             print 'Error:', error
-            log[url]['comment'] = False
+            log[full_url]['comment'] = False
 
         return log
 

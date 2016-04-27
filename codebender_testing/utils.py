@@ -643,33 +643,34 @@ class CodebenderSeleniumBot(object):
 
         total_sketches = len(urls_to_visit)
         tic = time.time()
-        library_re = re.compile(r'^.+/library/.+$')
+        library_re = re.compile(r'^(.+)/library/.+$')
 
         for url in urls_to_visit:
-            if library_re.match(url):
+            library_match = library_re.match(url)
+            if library_match:
                 library = url.split('/')[-1]
-                try:
-                    # Comment libraries without examples
-                    if len(library_examples_dic[library]) == 0:
-                        if logfile is None or not self.run_full_compile_tests:
-                            toc = time.time()
-                            continue
 
-                        # Update Disqus comments.
-                        current_date = strftime('%Y-%m-%d', log_time)
-                        if comment and compile_type in ['library', 'target_library']:
-                            self.open(url)
-                            self.get_element(By.CSS_SELECTOR, '#mycontainer h1')
-                            examples = False
-                            log_entry = disqus_wrapper.handle_library_comment(library, current_date, log_entry, examples)
-                        self.create_log(log_file, log_entry, compile_type)
+                # Comment libraries without examples
+                if len(library_examples_dic[library]) == 0:
+                    if logfile is None or not self.run_full_compile_tests:
+                        toc = time.time()
+                        continue
 
-                        test_status = '.'
-                        if not log_entry[url]['comment']:
-                            test_status = 'F'
-                        display_progress(test_status)
-                except Exception as error:
-                    print error
+                    test_status = 'F'
+
+                    # Update Disqus comments.
+                    current_date = strftime('%Y-%m-%d', log_time)
+                    if comment and compile_type in ['library', 'target_library']:
+                        self.open(url)
+                        self.get_element(By.CSS_SELECTOR, '#mycontainer h1')
+                        examples = False
+                        domain = library_match.group(1)
+                        log_entry = disqus_wrapper.handle_library_comment(library, domain, current_date, log_entry, examples)
+                        if url in log_entry and log_entry[url]['comment']:
+                            test_status = '.'
+                    self.create_log(log_file, log_entry, compile_type)
+
+                    display_progress(test_status)
 
                 toc = time.time()
                 if (toc - tic) >= SAUCELABS_TIMEOUT_SECONDS:
