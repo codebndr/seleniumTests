@@ -47,10 +47,16 @@ class Tests:
         return subprocess.call(command, shell=True, executable=SHELL)
 
     def send_mail_no_logs(self, identifier):
+        if self.url == 'local':
+            return
+
         command = ['mail', '-s', '"Selenium Tests: {identifier} Failed To Run" {email} <<< "Something went wrong with {identifier} tests. Please check the logs."'.format(identifier=identifier, email=self.email)]
         self.run_command(command)
 
     def send_mail_with_logs(self, identifier):
+        if self.url == 'local':
+            return
+
         default_tests_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
         root_dir = os.getenv('ROOTDIR', default_tests_dir)
 
