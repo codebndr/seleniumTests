@@ -77,7 +77,7 @@ TEST_DATA_ZIP = os.path.join(TEST_DATA_DIR, 'upload_zip.zip')
 # Directory in which the local compile tester files are stored.
 COMPILE_TESTER_DIR = os.path.join(TEST_DATA_DIR, 'cb_compile_tester')
 
-TEST_PROJECT_NAME = "test_project"
+TEST_PROJECT_NAME = "test_sketch"
 
 TIMEOUT = {
     'LOCATE_ELEMENT': 30,

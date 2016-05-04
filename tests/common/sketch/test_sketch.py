@@ -26,7 +26,7 @@ class TestSketch(SeleniumTestCase):
     def create_test_project(self, tester_login):
         """Makes sure we are logged in and have a project open before
         performing any of these tests."""
-        self.create_sketch('private' , 'project', 'short description')
+        self.create_sketch('private' , TEST_PROJECT_NAME + '_initial', 'short description')
 
     def test_rename_project(self):
         self.change_name_editor(TEST_PROJECT_NAME)
