@@ -14,6 +14,7 @@ SHELL='/bin/bash'
 
 class Tests:
     def __init__(self, url, environment):
+        self.retval = 0
         self.url = url
         self.environment = os.path.abspath(environment)
         self.email = os.getenv('EMAIL', 'void@mail.0')
@@ -47,10 +48,16 @@ class Tests:
         return subprocess.call(command, shell=True, executable=SHELL)
 
     def send_mail_no_logs(self, identifier):
+        if self.url == 'local':
+            return
+
         command = ['mail', '-s', '"Selenium Tests: {identifier} Failed To Run" {email} <<< "Something went wrong with {identifier} tests. Please check the logs."'.format(identifier=identifier, email=self.email)]
         self.run_command(command)
 
     def send_mail_with_logs(self, identifier):
+        if self.url == 'local':
+            return
+
         default_tests_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
         root_dir = os.getenv('ROOTDIR', default_tests_dir)
 
@@ -88,31 +95,41 @@ class Tests:
         command = self.create_command(test_directory, '--plugin')
         retval = self.run_command(command)
         if retval != 0:
+            self.retval = retval
             self.send_mail_no_logs(identifier)
 
     def libraries(self, identifier='libraries_fetch'):
         command = self.create_command('libraries_fetch', '-F', '--plugin')
-        self.run_command(command)
+        retval = self.run_command(command)
+        if retval != 0:
+            self.retval = retval
         self.send_mail_with_logs(identifier)
 
     def examples(self, identifier='libraries_test'):
         command = self.create_command('libraries', '-F', '--plugin')
-        self.run_command(command)
+        retval = self.run_command(command)
+        if retval != 0:
+            self.retval = retval
         self.send_mail_with_logs(identifier)
 
     def sketches(self, identifier='cb_compile_tester'):
         command = self.create_command('compile_tester', '-F', '--plugin')
-        self.run_command(command)
+        retval = self.run_command(command)
+        if retval != 0:
+            self.retval = retval
         self.send_mail_with_logs(identifier)
 
     def compile(self, libraries):
         command = self.create_command('target_libraries', '-F', '--plugin', '--libraries={}'.format(libraries))
-        self.run_command(command)
+        retval = self.run_command(command)
+        if retval != 0:
+            self.retval = retval
 
     def noplugin(self, identifier = 'noplugin'):
         command = self.create_command('noplugin')
         retval = self.run_command(command)
         if retval != 0:
+            self.retval = retval
             self.send_mail_no_logs(identifier)
 
     def walkthrough(self, identifier='walkthrough'):
@@ -127,15 +144,20 @@ class Tests:
 
         retval = max(retvals)
         if retval != 0:
+            self.retval = retval
             self.send_mail_no_logs(identifier)
 
     def staging(self):
         command = self.create_command('compile_tester', '-F', '--plugin')
-        self.run_command(command)
+        retval = self.run_command(command)
+        if retval != 0:
+            self.retval = retval
 
     def delete(self):
         command = self.create_command('delete_sketches')
-        self.run_command(command)
+        retval = self.run_command(command)
+        if retval != 0:
+            self.retval = retval
 
 OPERATIONS = {
     'common':'\tTest site common functionality',
@@ -274,6 +296,9 @@ def main():
     # Run tests
     tests = Tests(target, config)
     tests.run(operation, test=test, libraries=libraries)
+
+    print('Tests exit code:', tests.retval)
+    sys.exit(tests.retval)
 
 if __name__ == '__main__':
     main()
