@@ -1,6 +1,5 @@
 from codebender_testing.config import COMPILE_TESTER_DIR
 from codebender_testing.config import COMPILE_TESTER_LOGFILE
-from codebender_testing.config import COMPILE_TESTER_LOGFILE_STAGING
 from codebender_testing.config import COMPILE_TESTER_URL
 from codebender_testing.config import LIVE_SITE_URL
 from codebender_testing.config import STAGING_SITE_URL
@@ -83,7 +82,7 @@ class TestCompileTester(SeleniumTestCase):
             '#user_projects tbody a',
             iframe=False,
             compile_type='sketch',
-            create_report=True, logfile=COMPILE_TESTER_LOGFILE_STAGING)
+            create_report=True, logfile=COMPILE_TESTER_LOGFILE)
 
         for name in filenames:
             name = name.split('.')[0]

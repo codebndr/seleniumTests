@@ -431,7 +431,7 @@ class CodebenderSeleniumBot(object):
         except:
             print "An action failed during deletion process of project:", project_name
 
-    def resume_log (self, logfile, compile_type, sketches):
+    def resume_log(self, logfile, compile_type, sketches):
         """Resume previous log, if any. Coves 3 cases:
         Case 1: Test runs for 1st time and there is no previous log file.
         Case 2: Test runs for 2nd time and there is a previous log file which contains
