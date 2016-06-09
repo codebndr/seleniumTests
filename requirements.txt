@@ -9,3 +9,4 @@ pytest
 selenium
 simplejson
 disqus-python
+requests

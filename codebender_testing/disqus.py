@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from codebender_testing.config import get_path
+import pytest
 import disqusapi
 import simplejson
+import requests
 import base64
 import hashlib
 import hmac
@@ -16,6 +18,7 @@ FORUM = os.getenv('DISQUS_FORUM', 'codebender-cc')
 AUTHOR_URL = os.getenv('AUTHOR_URL', 'https://codebender.cc/user/codebender')
 DISQUS_REQUESTS_PER_HOUR = 1000
 DISQUS_WAIT = (DISQUS_REQUESTS_PER_HOUR / 60) / 60
+DISQUS_MIN_REMANING_REQUESTS = 10
 CHANGE_LOG = 'examples_compile_log.json'
 DISQUS_COMMENTS = 'disqus_comments.json'
 EXAMPLES_WITHOUT_LIBRARY_DB = 'examples_without_library.json'
@@ -58,6 +61,10 @@ class DisqusWrapper:
         return "{0} {1} {2}".format(message, sig, timestamp)
 
     def update_comment(self, sketch, results, current_date, log_entry, openFailFlag, total_sketches):
+        check_rate_limit = self.check_rate_limit()
+        if not check_rate_limit:
+            pytest.exit('Disqus API rate limit reached')
+
         """A comment is added to the library as soon as its first example is compiled.
         `library`: The library in which belongs the currently compiled example.
         `self.last_library`: The library in which belongs the previously compiled example.
@@ -250,3 +257,16 @@ class DisqusWrapper:
             print 'Error:', error
 
         return comment_status
+
+    def check_rate_limit(self):
+        usage_check = False
+        try:
+            r = requests.get('https://disqus.com/api/3.0/applications/listUsage.json?api_secret=' + self.DISQUS_API_SECRET + '&access_token=' + self.DISQUS_ACCESS_TOKEN)
+            api_remaning_limit = r.headers['X-Ratelimit-Remaining']
+            if api_remaning_limit > DISQUS_MIN_REMANING_REQUESTS:
+                usage_check = True
+
+        except Exception as error:
+            print 'Error:', error
+
+        return usage_check
