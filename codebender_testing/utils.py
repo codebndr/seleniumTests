@@ -911,9 +911,7 @@ class CodebenderSeleniumBot(object):
         privateRadioButton.click()
 
     def change_name(self, name):
-        print name
         nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal .modal-body [id="create-sketch-name"')
-        print nameField
         nameField.clear()
         nameField.send_keys(name)
         nameField.send_keys(Keys.ENTER)
