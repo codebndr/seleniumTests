@@ -69,18 +69,20 @@ class Tests:
         logfile_timestamp = re.match(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-.+', logfile).group(1)
 
         report_regexp = re.compile('report_{timestamp}-{identifier}_(\d+)'.format(timestamp=logfile_timestamp, identifier=identifier))
-        reportfile = sorted([filename for filename in os.listdir(reports) if filename not in self.files_to_ignore and report_regexp.match(filename)], reverse=True)[0]
-        changes = report_regexp.match(reportfile).group(1)
+        reportfile = sorted([filename for filename in os.listdir(reports) if filename not in self.files_to_ignore and report_regexp.match(filename)], reverse=True)
+        if reportfile:
+            reportfile = reportfile[0]
+            changes = report_regexp.match(reportfile).group(1)
 
-        email_date = time.strftime('%Y-%m-%d %H:%M:%S')
+            email_date = time.strftime('%Y-%m-%d %H:%M:%S')
 
-        command = [
-            '(echo "Changes since the last time: {changes}";'.format(changes=changes),
-            'uuencode "{logs}/{logfile}" "{logfile}";'.format(logs=logs, logfile=logfile),
-            'uuencode "{reports}/{reportfile}" "{reportfile}")'.format(reports=reports, reportfile=reportfile),
-            '| mail -s "Selenium Tests Report: {identifier} {email_date} Changes: {changes}" {email}'.format(identifier=identifier, email_date=email_date, changes=changes, email=self.email)
-        ]
-        self.run_command(command)
+            command = [
+                '(echo "Changes since the last time: {changes}";'.format(changes=changes),
+                'uuencode "{logs}/{logfile}" "{logfile}";'.format(logs=logs, logfile=logfile),
+                'uuencode "{reports}/{reportfile}" "{reportfile}")'.format(reports=reports, reportfile=reportfile),
+                '| mail -s "Selenium Tests Report: {identifier} {email_date} Changes: {changes}" {email}'.format(identifier=identifier, email_date=email_date, changes=changes, email=self.email)
+            ]
+            self.run_command(command)
 
     def create_command(self, test_directory, *extra_arguments):
         return ['tox', 'tests/' + test_directory, '--', '--url={}'.format(TARGETS[self.url])] + list(extra_arguments)

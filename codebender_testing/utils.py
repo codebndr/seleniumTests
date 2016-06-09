@@ -543,6 +543,7 @@ class CodebenderSeleniumBot(object):
 
         print '\nVisiting:', len(urls_to_visit), 'URLs'
         tic = time.time()
+        toc = tic
         for url in urls_to_visit:
             self.open(url)
             self.get_element(By.CSS_SELECTOR, '#mycontainer')
@@ -577,6 +578,8 @@ class CodebenderSeleniumBot(object):
                 return
 
         report_creator('fetch', log_entry, log_file)
+
+        print '\nTest duration:', int(toc - tic), 'sec'
 
     def compile_sketch(self, url, boards, iframe=False, project_view=False):
         """Compiles the sketch located at `url`, or an iframe within the page
@@ -643,6 +646,7 @@ class CodebenderSeleniumBot(object):
 
         total_sketches = len(urls_to_visit)
         tic = time.time()
+        toc = tic
         library_re = re.compile(r'^(.+)/library/.+$')
 
         for url in urls_to_visit:
@@ -752,6 +756,7 @@ class CodebenderSeleniumBot(object):
         # Generate a report if requested.
         if compile_type != 'target_library' and create_report and self.run_full_compile_tests:
             report_creator(compile_type, log_entry, log_file)
+
         print '\nTest duration:', int(toc - tic), 'sec'
 
     def compile_all_sketches(self, url, selector, **kwargs):
@@ -906,9 +911,7 @@ class CodebenderSeleniumBot(object):
         privateRadioButton.click()
 
     def change_name(self, name):
-        print name
         nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal .modal-body [id="create-sketch-name"')
-        print nameField
         nameField.clear()
         nameField.send_keys(name)
         nameField.send_keys(Keys.ENTER)
