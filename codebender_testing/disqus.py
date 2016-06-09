@@ -127,7 +127,7 @@ class DisqusWrapper:
                 for thread in paginator:
 
                     # Check if library has already a comment.
-                    post_id, existing_message = self.get_posts(thread['id'])
+                    post_id, existing_message = self.get_posts(thread['id'], 'library')
 
                     # If library already has a comment, update it.
                     if post_id and existing_message:
@@ -173,7 +173,7 @@ class DisqusWrapper:
                     new_message = self.messages['example_unsupported'].replace('TEST_DATE', current_date)
 
                 for page in paginator:
-                    post_id, existing_message = self.get_posts(page['id'])
+                    post_id, existing_message = self.get_posts(page['id'], 'example')
                     if post_id and existing_message:
                         log[url]['comment'] = self.update_post(post_id, new_message)
                         comment_updated = True
@@ -187,9 +187,12 @@ class DisqusWrapper:
 
         return log
 
-    def get_posts(self, thread_id):
+    def get_posts(self, thread_id, type):
         post_id = None
         raw_message = None
+        type_regexp = re.compile(r'^This example was tested.+')
+        if type == 'library':
+            type_regexp = re.compile(r'^This library and its examples were tested.+')
         try:
             """ Returns a Paginator object that matches the desired criteria:
             `self.disqus.api.posts.list`: Returns a list of posts ordered by the date created.
@@ -203,7 +206,7 @@ class DisqusWrapper:
                                             order='asc')
             if paginator:
                 for post in paginator:
-                    if post['author']['name'] == self.user['username'] and post['author']['url'] == AUTHOR_URL:
+                    if post['author']['name'] == self.user['username'] and post['author']['url'] == AUTHOR_URL and type_regexp.match(post['raw_message']):
                         post_id = post['id']
                         raw_message = post['raw_message']
                         break
