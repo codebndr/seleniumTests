@@ -127,7 +127,7 @@ class DisqusWrapper:
                 for thread in paginator:
 
                     # Check if library has already a comment.
-                    post_id, existing_message = self.get_posts(thread['id'], 'library')
+                    post_id, existing_message = self.get_posts(thread['id'], 'library', examples=examples)
 
                     # If library already has a comment, update it.
                     if post_id and existing_message:
@@ -187,12 +187,14 @@ class DisqusWrapper:
 
         return log
 
-    def get_posts(self, thread_id, type):
+    def get_posts(self, thread_id, type, examples=True):
         post_id = None
         raw_message = None
         type_regexp = re.compile(r'^This example was tested.+')
-        if type == 'library':
+        if type == 'library' and examples:
             type_regexp = re.compile(r'^This library and its examples were tested.+')
+        elif type == 'library' and not examples:
+            type_regexp = re.compile(r'^This library was tested.+')
         try:
             """ Returns a Paginator object that matches the desired criteria:
             `self.disqus.api.posts.list`: Returns a list of posts ordered by the date created.

@@ -669,7 +669,7 @@ class CodebenderSeleniumBot(object):
                         self.get_element(By.CSS_SELECTOR, '#mycontainer h1')
                         examples = False
                         domain = library_match.group(1)
-                        log_entry = disqus_wrapper.handle_library_comment(library, domain, current_date, log_entry, examples)
+                        log_entry = disqus_wrapper.handle_library_comment(library, domain, current_date, log_entry, examples=examples)
                         if url in log_entry and log_entry[url]['comment']:
                             test_status = '.'
                     self.create_log(log_file, log_entry, compile_type)
