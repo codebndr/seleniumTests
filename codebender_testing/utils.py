@@ -537,9 +537,9 @@ class CodebenderSeleniumBot(object):
         compile_type = 'fetch'
         urls_to_visit, log_entry, log_file, log_time = self.resume_log(logfile, compile_type, examples_libraries)
 
-        libraries_re = re.compile(r'/libraries$')
-        library_re = re.compile(r'/library/.+$')
-        example_re = re.compile(r'/example/.+/.+$')
+        libraries_re = re.compile(r'.+/libraries$')
+        library_re = re.compile(r'.+/library/.+$')
+        example_re = re.compile(r'.+/example/.+/.+$')
 
         print '\nVisiting:', len(urls_to_visit), 'URLs'
         tic = time.time()
