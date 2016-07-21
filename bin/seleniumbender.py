@@ -187,7 +187,7 @@ TARGETS = {
 
 PLATFORMS = {
     'Linux': 'X11; Ubuntu; Linux x86_64',
-    'Windows 7': 'Windows NT 6.1',
+    'Windows 10': 'Windows NT 10.0',
     'OS X 10.11': 'Macintosh; Intel Mac OS X 10_11_1'
 }
 USER_AGENTS = {}
