@@ -41,6 +41,8 @@ class Tests:
             self.staging()
         elif operation == 'delete':
             self.delete()
+        elif operation == 'collaboration':
+            self.collaboration()
 
     def run_command(self, command):
         command = ' '.join(command)
@@ -158,6 +160,12 @@ class Tests:
         if retval != 0:
             self.retval = retval
 
+    def collaboration(self):
+        command = self.create_command('collaboration')
+        retval = self.run_command(command)
+        if retval != 0:
+            self.retval = retval
+
 OPERATIONS = {
     'common':'\tTest site common functionality',
     'libraries': 'Visit all libraries and their examples',
@@ -167,7 +175,8 @@ OPERATIONS = {
     'noplugin': 'Run tests without app/plugin installed',
     'walkthrough': 'Run tests for walkthrough',
     'staging': '\tRun tests for staging only',
-    'delete': '\tDelete all sketches from test user'
+    'delete': '\tDelete all sketches from test user',
+    'collaboration': 'Run tests for collaboration'
 }
 
 TARGETS = {
