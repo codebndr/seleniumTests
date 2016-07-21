@@ -11,3 +11,5 @@ python seleniumbender.py walkthrough --target=live --saucelabs --capabilities=ca
 # noplugin
 python seleniumbender.py noplugin --target=live --saucelabs --capabilities=capabilities_firefox.yaml --config=config.cfg
 python seleniumbender.py noplugin --target=live --saucelabs --capabilities=capabilities_chrome.yaml --config=config.cfg
+# collaboration
+python seleniumbender.py collaboration --target=live --saucelabs --capabilities=capabilities_firefox.yaml --config=config.cfg
