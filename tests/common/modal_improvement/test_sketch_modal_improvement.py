@@ -6,56 +6,62 @@ from selenium.webdriver.support.ui import Select
 from codebender_testing import config
 from codebender_testing.config import STAGING_SITE_URL
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions
+from codebender_testing.config import TIMEOUT
+from selenium.webdriver.support.ui import WebDriverWait
 import os
 import time
 import pytest
 
 class TestSketchesCounters(SeleniumTestCase):
 
-    def test_sketches_counters(self):
-        self.driver.implicitly_wait(30)
-        driver = self.driver
+    @pytest.fixture(scope="class", autouse=True)
+    def open_user_home(self, tester_login):
+        """Makes sure we are logged in and are at the user home page
+        performing any of these tests."""
+        pass
+
+    def test_create_sketch_modal(self):
+        # Create a public project.
+        createSketchBtn = self.get_element(By.ID, 'create_sketch_btn')
+        createSketchBtn.click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CSS_SELECTOR, "#create-sketch-modal")
+                )
+            )
+        createBtn = self.get_element(
+                By.ID, 'create-sketch-modal-action-button')
+
+        createdProject = self.get_element(
+                By.ID, 'create-sketch-name').get_attribute('value')
+
+        # Check that when the create sketch modal opens,
+        # the sketch name input has focus.
+        assert self.get_element(By.ID, 'create-sketch-name') == \
+            self.driver.switch_to.active_element
+
+        # Check that when the input has focus and you press Enter,
+        # the create sketch action is executed.
+        self.get_element(By.ID, 'create-sketch-name').send_keys(Keys.ENTER)
+
+        self.get_element(By.CSS_SELECTOR, '#create-sketch-modal-action-button .fa-spinner')
+
+        # Check that during the sketch creation,
+        # the sketch privacy radio buttons are disabled.
+        publicRadioButton = self.get_element(By.CSS_SELECTOR,
+            '#create-sketch-modal-type-controls [value="public"]')
+        privateRadioButton = self.get_element(By.CSS_SELECTOR,
+            '#create-sketch-modal-type-controls [value="private"]')
+        assert publicRadioButton.get_attribute('disabled')
+        assert privateRadioButton.get_attribute('disabled')
+
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, "#editor_heading_project_name")
+            )
+        )
+
+        # Delete the created project.
         self.open("/")
-        #Login and visit the new home page.
-        credentials = {
-            'username': os.environ.get('CODEBENDER_TEST_USER'),
-            'password': os.environ.get('CODEBENDER_TEST_PASS'),
-        }
-        driver.find_element_by_id("login_btn").click()
-        driver.find_element_by_id("username").clear()
-        driver.find_element_by_id("username").send_keys(credentials['username'])
-        driver.find_element_by_id("password").clear()
-        driver.find_element_by_id("password").send_keys(credentials['password'])
-        driver.find_element_by_id("_submit").click()
-
-        assert driver.find_element_by_id("private-sketches-counter").text=="0"
-        assert driver.find_element_by_id("public-sketches-counter").text=="0"
-
-        #Create 1 public sketch
-        driver.find_element_by_id("create_sketch_btn").click()
-        #Check that when the create sketch modal opens, the sketch name input has focus
-
-        driver.find_element_by_id("create-sketch-modal-action-button").click()
-        self.get_element(By.ID, "save")
-        driver.find_element_by_id("logo_small").click()
-
-
-         #Check that when the input has focus and you press Enter,
-         #the create sketch action is executed and the user is redirected into the new sketch in editor
-
-
-class TestDeleteAllSketches(SeleniumTestCase):
-
-    @pytest.mark.requires_url(STAGING_SITE_URL)
-    def test_delete(self, tester_login):
-        try:
-            sketches = self.find_all('#project_list > li .sketch-block-title > a')
-            projects = []
-            for sketch in sketches:
-                projects.append(sketch.text)
-            for project in projects:
-                self.delete_project(project)
-        except:
-            print 'No sketches found'
-
-        self.logout()
+        self.delete_project(createdProject)
