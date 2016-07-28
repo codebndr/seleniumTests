@@ -22,15 +22,15 @@ class TestSketchesCounters(SeleniumTestCase):
         createSketchBtn = self.get_element(By.ID, 'create_sketch_btn')
         createSketchBtn.click()
         WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
-                expected_conditions.visibility_of_element_located(
-                    (By.CSS_SELECTOR, "#create-sketch-modal")
-                )
+            expected_conditions.visibility_of_element_located(
+                (By.CSS_SELECTOR, "#create-sketch-modal")
             )
+        )
         createBtn = self.get_element(
-                By.ID, 'create-sketch-modal-action-button')
+            By.ID, 'create-sketch-modal-action-button')
 
         createdProject = self.get_element(
-                By.ID, 'create-sketch-name').get_attribute('value')
+            By.ID, 'create-sketch-name').get_attribute('value')
 
         # Check that when the create sketch modal opens,
         # the sketch name input has focus.
