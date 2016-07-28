@@ -2,15 +2,11 @@ from codebender_testing.utils import SeleniumTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import Select
 from codebender_testing import config
-from codebender_testing.config import STAGING_SITE_URL
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions
 from codebender_testing.config import TIMEOUT
 from selenium.webdriver.support.ui import WebDriverWait
-import os
-import time
 import pytest
 
 class TestSketchesCounters(SeleniumTestCase):
