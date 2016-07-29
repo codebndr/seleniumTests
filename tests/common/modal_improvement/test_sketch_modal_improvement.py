@@ -48,7 +48,8 @@ class TestSketchesCounters(SeleniumTestCase):
         # the create sketch action is executed.
         self.get_element(By.ID, 'create-sketch-name').send_keys(Keys.ENTER)
 
-        self.get_element(By.CSS_SELECTOR, '#create-sketch-modal-action-button .fa-spinner')
+        self.get_element(By.CSS_SELECTOR,
+            '#create-sketch-modal-action-button .fa-spinner')
 
         # Check that during the sketch creation,
         # the sketch privacy radio buttons are disabled.
@@ -72,3 +73,19 @@ class TestSketchesCounters(SeleniumTestCase):
         # Delete the created project.
         self.open("/")
         self.delete_project(createdProject)
+
+        # Check that Create btn is disbaled when you try to create a sketch
+        # without a name.
+        createSketchBtn = self.get_element(By.ID, 'create_sketch_btn')
+        createSketchBtn.click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_element_located(
+                (By.CSS_SELECTOR, "#create-sketch-modal")
+            )
+        )
+        self.get_element(By.ID, 'create-sketch-name').clear()
+        self.get_element(By.ID, "create-sketch-name").send_keys(
+            Keys.CONTROL + "a")
+        self.get_element(By.ID, "create-sketch-name").send_keys(Keys.DELETE)
+        assert self.get_element(By.ID,
+            'create-sketch-modal-action-button').get_attribute('disabled')
