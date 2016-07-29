@@ -64,6 +64,10 @@ class TestSketchesCounters(SeleniumTestCase):
             )
         )
 
+        # Check that when you create the sketch you are redirected
+        # into the editor.
+        self.get_element(By.ID, "cb_cf_flash_btn")
+
         # Delete the created project.
         self.open("/")
         self.delete_project(createdProject)
