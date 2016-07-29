@@ -63,7 +63,7 @@ done
 
 cd ..
 
-URL="https://codebender.cc"
+URL="https://staging.codebender.cc"
 
 email_date=$(date +"%Y-%m-%d %H:%M:%S")
 

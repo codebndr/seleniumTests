@@ -59,7 +59,7 @@ _FIREFOX_EXTENSION_FNAME = 'codebender.xpi'
 # Chrome extension for Chrome versions < 42.
 _CHROME_EXTENSION_FNAME = 'codebendercc-extension.crx'
 # Chrome extension for Chrome versions >= 42.
-_CHROME_APP_FNAME = 'chrome-app-1.0.0.8.zip'
+_CHROME_APP_FNAME = 'chrome-app-1.0.0.11.zip'
 
 # Maximum version number that we can use the Chrome extension with.
 # For versions higher than this, we need to use the newer Codebender app.

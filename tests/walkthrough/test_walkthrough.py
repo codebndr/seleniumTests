@@ -54,7 +54,8 @@ class TestWalkthrough(SeleniumTestCase):
         assert cb_cf_operation_output.text.strip() in [
             'Please select a valid port!',
             'The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again. More Info',
-            'An error occurred while connecting to your device. Please try again.'
+            'An error occurred while connecting to your device. Please try again.',
+            'Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again. More Info'
         ]
         board_image = self.get_element(By.CSS_SELECTOR, '#arduinoImg')
         assert board_image.is_displayed()
