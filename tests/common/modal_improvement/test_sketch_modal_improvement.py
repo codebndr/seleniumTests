@@ -37,6 +37,12 @@ class TestSketchesCounters(SeleniumTestCase):
         assert self.get_element(By.ID, 'create-sketch-name') == \
             self.driver.switch_to.active_element
 
+        # Check that sketch name is auto-generated as:
+        # Untitled Sketch CURRENT_DATE.
+        current_date_text= "Untitled Sketch " + time.strftime("%Y-%m-%d")
+        assert self.get_element(By.ID,
+            "create-sketch-name").get_attribute("value") == current_date_text
+
         # Check that when the input has focus and you press Enter,
         # the create sketch action is executed.
         self.get_element(By.ID, 'create-sketch-name').send_keys(Keys.ENTER)
