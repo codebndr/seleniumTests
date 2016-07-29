@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions
 from codebender_testing.config import TIMEOUT
 from selenium.webdriver.support.ui import WebDriverWait
 import pytest
+import time
 
 class TestSketchesCounters(SeleniumTestCase):
 
