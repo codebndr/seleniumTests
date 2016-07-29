@@ -942,7 +942,7 @@ class CodebenderSeleniumBot(object):
         )
 
     def change_short_description(self, description):
-        nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-sort-description')
+        nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-short-description')
         nameField.clear()
         nameField.send_keys(description)
         nameField.send_keys(Keys.ENTER)
