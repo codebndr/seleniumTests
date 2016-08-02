@@ -89,3 +89,19 @@ class TestSketchesCounters(SeleniumTestCase):
         self.get_element(By.ID, "create-sketch-name").send_keys(Keys.DELETE)
         assert self.get_element(By.ID,
             'create-sketch-modal-action-button').get_attribute('disabled')
+
+        # Check thatwhen you create a sketch with invalid name error message
+        # "Invalid Project Name. Please enter a new one." appears.
+        self.get_element(By.ID, "create-sketch-name").send_keys('.')
+        self.get_element(By.ID, 'create-sketch-name').send_keys(Keys.ENTER)
+        assert self.get_element(By.ID,
+            'create-sketch-modal-action-button').get_attribute('disabled')
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.element_to_be_clickable(
+                (By.ID, 'create-sketch-modal-action-button')
+            )
+        )
+        errorMessage = self.get_element(By.ID,
+            'create-sketch-modal-error-message')
+        assert errorMessage.text == \
+            "Invalid Project Name. Please enter a new one."
