@@ -116,6 +116,23 @@ class TestUserHome(SeleniumTestCase):
             )
         )
 
+    def test_clone(self):
+        # Test the Clone button.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-controls .fa-clone').click()
+        self.get_element(By.ID, "save")
+        self.get_element(By.ID,"logo_small").click()
+        sketches = self.find_all('#project_list > li .sketch-block-title > a')
+        projects = []
+        for sketch in sketches:
+            projects.append(sketch.text)
+        for project in projects:
+            if 'copy' in project:
+                assert self.get_element(By.CSS_SELECTOR,
+                    '.sketch-block-cloned-from').text == \
+                    "Cloned from Sketch publicSketch1 by demo_user"
+
     def test_delete(self, tester_login):
         try:
             sketches = self.find_all('#project_list > li \
