@@ -58,23 +58,24 @@ class TestUserHome(SeleniumTestCase):
         sketch_upload_zip.click()
         self._upload_test('#dropzoneForm', TEST_DATA_ZIP, sketch_name='upload_zip')
 
-    def test_clone(self):
+    def test_create(self):
         self.create_sketch('public' , 'publicSketch1', 'short description')
         self.open("/")
+        # Test that short description is present.
         sketch = self.find('#project_list > li .sketch-block-title > a')
-        self.get_element(By.CSS_SELECTOR,
-            '#project_list > li .sketch-block-controls .fa-clone').click()
-        self.get_element(By.ID, "save")
-        self.get_element(By.ID,"logo_small").click()
-        sketches = self.find_all('#project_list > li .sketch-block-title > a')
-        projects = []
-        for sketch in sketches:
-            projects.append(sketch.text)
-        for project in projects:
-            if 'copy' in project:
-                assert self.get_element(By.CSS_SELECTOR,
-                    '.sketch-block-cloned-from').text == \
-                    "Cloned from Sketch publicSketch1 by demo_user"
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-creation-container \
+            .sketch-block-creation')
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-description \
+            .sketch-block-short-description')
+        # Test that when a sketch is created,
+        # "created" appears next to its title.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-creation-container \
+            .sketch-block-creation').text == \
+            "created a few seconds ago"
 
     def test_delete(self, tester_login):
         try:
@@ -85,6 +86,5 @@ class TestUserHome(SeleniumTestCase):
                 projects.append(sketch.text)
             for project in projects:
                 self.delete_project(project)
-                print project
         except:
             print 'No sketches found'
