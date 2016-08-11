@@ -27,7 +27,7 @@ from codebender_testing.config import TEST_PROJECT_NAME
 from codebender_testing.config import get_path
 from codebender_testing.config import jsondump
 from codebender_testing.disqus import DisqusWrapper
-
+from selenium.webdriver.common.action_chains import ActionChains
 
 # Time to wait until we give up on a DOM property becoming available.
 DOM_PROPERTY_DEFINED_TIMEOUT = 30
@@ -915,6 +915,21 @@ class CodebenderSeleniumBot(object):
         if privacy == 'private':
             privateRadioButton = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-type-controls [value="private"]')
         privateRadioButton.click()
+
+    def change_privacy_editor(self, privacy):
+        driver=self.driver
+        if privacy == 'private':
+            privacy = self.get_element(By.CSS_SELECTOR,'#editor_heading_privacy_icon .cb-icon-globe-inv')
+            actions = ActionChains(driver)
+            actions.move_to_element(privacy)
+            actions.double_click(privacy)
+            actions.perform()
+        else:
+            privacy = self.get_element(By.CSS_SELECTOR,'#editor_heading_privacy_icon .icon-lock')
+            actions = ActionChains(driver)
+            actions.move_to_element(privacy)
+            actions.double_click(privacy)
+            actions.perform()
 
     def change_name(self, name):
         nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal .modal-body [id="create-sketch-name"')
