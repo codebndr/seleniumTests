@@ -77,6 +77,20 @@ class TestUserHome(SeleniumTestCase):
             .sketch-block-creation').text == \
             "created a few seconds ago"
 
+    def test_modify(self):
+        driver = self.driver
+        sketch = self.find('#project_list > li .sketch-block-title > a').click()
+        self.change_short_description_editor('')
+        self.get_element(By.ID, "save").click()
+        self.open("/")
+        # Test that when a sketch is modified,
+        # "modified" appears next to its title.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-creation-container \
+            .sketch-block-creation').text == \
+            "modified a few seconds ago"
+
     def test_delete(self, tester_login):
         try:
             sketches = self.find_all('#project_list > li \
