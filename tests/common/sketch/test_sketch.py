@@ -176,7 +176,14 @@ class TestSketch(SeleniumTestCase):
 
     def test_delete_file(self):
         """Tests file delete modal """
-        delete_file_button = self.get_element(By.CLASS_NAME, 'delete-file-button')
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR,
+            '#files_list .delete-file-button .icon-remove')
+            )
+        )
+        delete_file_button = self.get_element(By.CSS_SELECTOR,
+            '#files_list .delete-file-button .icon-remove')
         delete_file_button.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.visibility_of(
