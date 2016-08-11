@@ -35,6 +35,8 @@ class TestSketch(SeleniumTestCase):
 
     def test_change_short_description(self):
         self.change_short_description_editor('description')
+        description = self.get_element(By.ID,'short-description')
+        assert description.text == 'description'
 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
