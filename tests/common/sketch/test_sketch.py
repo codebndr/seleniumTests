@@ -29,6 +29,14 @@ class TestSketch(SeleniumTestCase):
         self.create_sketch('public' , TEST_PROJECT_NAME + '_initial',
             'short description')
 
+    def test_change_privacy(self):
+        self.change_privacy_editor('private')
+        assert self.get_element(By.CSS_SELECTOR,
+            '#editor_heading_privacy_icon .icon-lock')
+        self.change_privacy_editor('public')
+        assert self.get_element(By.CSS_SELECTOR,
+            '#editor_heading_privacy_icon .cb-icon-globe-inv')
+
     def test_rename_project(self):
         self.change_name_editor(TEST_PROJECT_NAME)
         sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
