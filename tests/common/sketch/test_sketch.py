@@ -26,7 +26,8 @@ class TestSketch(SeleniumTestCase):
     def create_test_project(self, tester_login):
         """Makes sure we are logged in and have a project open before
         performing any of these tests."""
-        self.create_sketch('public' , TEST_PROJECT_NAME + '_initial', 'short description')
+        self.create_sketch('public' , TEST_PROJECT_NAME + '_initial',
+            'short description')
 
     def test_rename_project(self):
         self.change_name_editor(TEST_PROJECT_NAME)
@@ -40,7 +41,8 @@ class TestSketch(SeleniumTestCase):
 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
-        boards = ['Arduino Uno', 'Arduino Leonardo', 'Arduino Mega 2560 or Mega ADK']
+        boards = ['Arduino Uno', 'Arduino Leonardo',
+            'Arduino Mega 2560 or Mega ADK']
         for board in boards:
             self.execute_script(SELECT_BOARD_SCRIPT(board))
             compile_button = self.get_element(By.ID, "cb_cf_verify_btn")
@@ -51,7 +53,8 @@ class TestSketch(SeleniumTestCase):
                     (By.ID, "progress"))
             )
 
-            operation_output = self.driver.find_element_by_id('operation_output')
+            operation_output = \
+                self.driver.find_element_by_id('operation_output')
             assert operation_output.text.strip() == 'Verification successful!'
             throttle_compile()
 
@@ -89,7 +92,8 @@ class TestSketch(SeleniumTestCase):
     def test_serial_monitor_disables_fields(self):
         """Tests that opening the serial monitor disables the port and baudrate
         fields."""
-        open_serial_monitor_button = self.get_element(By.ID, 'cb_cf_serial_monitor_connect')
+        open_serial_monitor_button = self.get_element(By.ID,
+            'cb_cf_serial_monitor_connect')
         open_serial_monitor_button.click()
 
         WebDriverWait(self.driver, FLASH_TIMEOUT).until(
