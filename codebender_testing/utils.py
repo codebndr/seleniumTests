@@ -920,7 +920,6 @@ class CodebenderSeleniumBot(object):
         nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal .modal-body [id="create-sketch-name"')
         nameField.clear()
         nameField.send_keys(name)
-        nameField.send_keys(Keys.ENTER)
 
     def change_name_editor(self, name):
         sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
@@ -945,7 +944,6 @@ class CodebenderSeleniumBot(object):
         nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-short-description')
         nameField.clear()
         nameField.send_keys(description)
-        nameField.send_keys(Keys.ENTER)
 
     def change_short_description_editor(self, description):
         editDescription = self.get_element(By.CSS_SELECTOR,'.short-description-edit')
