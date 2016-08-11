@@ -1,6 +1,6 @@
 from selenium.webdriver.common.by import By
 import pytest
-
+from codebender_testing import config
 from codebender_testing.config import TEST_DATA_INO
 from codebender_testing.config import TEST_DATA_ZIP
 from codebender_testing.utils import SeleniumTestCase
@@ -57,3 +57,90 @@ class TestUserHome(SeleniumTestCase):
         sketch_upload_zip = self.get_element(By.CSS_SELECTOR, '#upload-sketch-zip')
         sketch_upload_zip.click()
         self._upload_test('#dropzoneForm', TEST_DATA_ZIP, sketch_name='upload_zip')
+
+    def test_create(self):
+        self.create_sketch('public' , 'publicSketch1', 'short description')
+        self.open("/")
+        # Test that short description is present.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-creation-container \
+            .sketch-block-creation')
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-description \
+            .sketch-block-short-description')
+        # Test that when a sketch is created,
+        # "created" appears next to its title.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-creation-container \
+            .sketch-block-creation').text == \
+            "created a few seconds ago"
+
+    def test_modify(self):
+        driver = self.driver
+        sketch = self.find('#project_list > li .sketch-block-title > a').click()
+        self.change_short_description_editor('')
+        self.get_element(By.ID, "save").click()
+        self.open("/")
+        # Test that when a sketch is modified,
+        # "modified" appears next to its title.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-creation-container \
+            .sketch-block-creation').text == \
+            "modified a few seconds ago"
+
+    def test_share(self):
+        # Test the Share button.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-controls \
+            .fa-share-square-o').click()
+        # Check that share modal opens and you can click Embed tab.
+        self.get_element(By.CSS_SELECTOR,
+            '#share-modal .fa-code ').click()
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#share-modal .active > a ').text == "Embed"
+        # Check that you can click Share tab inside share modal.
+        self.get_element(By.CSS_SELECTOR,
+            '#share-modal .fa-share-square-o ').click()
+        assert  self.get_element(By.CSS_SELECTOR,
+            '#share-modal .active > a ').text == "Share"
+        # Close share modal.
+        self.get_element(By.CSS_SELECTOR,
+            '#share-modal .modal-close-button').click()
+        WebDriverWait(self.driver, 30).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, "#share-modal")
+            )
+        )
+
+    def test_clone(self):
+        # Test the Clone button.
+        sketch = self.find('#project_list > li .sketch-block-title > a')
+        self.get_element(By.CSS_SELECTOR,
+            '#project_list > li .sketch-block-controls .fa-clone').click()
+        self.get_element(By.ID, "save")
+        self.get_element(By.ID,"logo_small").click()
+        sketches = self.find_all('#project_list > li .sketch-block-title > a')
+        projects = []
+        for sketch in sketches:
+            projects.append(sketch.text)
+        for project in projects:
+            if 'copy' in project:
+                assert self.get_element(By.CSS_SELECTOR,
+                    '.sketch-block-cloned-from').text == \
+                    "Cloned from Sketch publicSketch1 by demo_user"
+
+    def test_delete(self, tester_login):
+        try:
+            sketches = self.find_all('#project_list > li \
+                .sketch-block-title > a')
+            projects = []
+            for sketch in sketches:
+                projects.append(sketch.text)
+            for project in projects:
+                self.delete_project(project)
+        except:
+            print 'No sketches found'

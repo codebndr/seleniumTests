@@ -26,17 +26,31 @@ class TestSketch(SeleniumTestCase):
     def create_test_project(self, tester_login):
         """Makes sure we are logged in and have a project open before
         performing any of these tests."""
-        self.create_sketch('public' , TEST_PROJECT_NAME + '_initial', 'short description')
+        self.create_sketch('public' , TEST_PROJECT_NAME + '_initial',
+            'short description')
+
+    def test_change_privacy(self):
+        self.change_privacy_editor('private')
+        assert self.get_element(By.CSS_SELECTOR,
+            '#editor_heading_privacy_icon .icon-lock')
+        self.change_privacy_editor('public')
+        assert self.get_element(By.CSS_SELECTOR,
+            '#editor_heading_privacy_icon .cb-icon-globe-inv')
 
     def test_rename_project(self):
         self.change_name_editor(TEST_PROJECT_NAME)
+        sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
+        assert sketchHeading.text == TEST_PROJECT_NAME
 
     def test_change_short_description(self):
         self.change_short_description_editor('description')
+        description = self.get_element(By.ID,'short-description')
+        assert description.text == 'description'
 
     def test_verify_code(self):
         """Ensures that we can compile code and see the success message."""
-        boards = ['Arduino Uno', 'Arduino Leonardo', 'Arduino Mega 2560 or Mega ADK']
+        boards = ['Arduino Uno', 'Arduino Leonardo',
+            'Arduino Mega 2560 or Mega ADK']
         for board in boards:
             self.execute_script(SELECT_BOARD_SCRIPT(board))
             compile_button = self.get_element(By.ID, "cb_cf_verify_btn")
@@ -47,7 +61,8 @@ class TestSketch(SeleniumTestCase):
                     (By.ID, "progress"))
             )
 
-            operation_output = self.driver.find_element_by_id('operation_output')
+            operation_output = \
+                self.driver.find_element_by_id('operation_output')
             assert operation_output.text.strip() == 'Verification successful!'
             throttle_compile()
 
@@ -85,7 +100,8 @@ class TestSketch(SeleniumTestCase):
     def test_serial_monitor_disables_fields(self):
         """Tests that opening the serial monitor disables the port and baudrate
         fields."""
-        open_serial_monitor_button = self.get_element(By.ID, 'cb_cf_serial_monitor_connect')
+        open_serial_monitor_button = self.get_element(By.ID,
+            'cb_cf_serial_monitor_connect')
         open_serial_monitor_button.click()
 
         WebDriverWait(self.driver, FLASH_TIMEOUT).until(
@@ -146,9 +162,40 @@ class TestSketch(SeleniumTestCase):
         )
         assert 'test_file.txt' in self.driver.page_source
 
+    def test_rename_projectfile_direct(self):
+        # Tests that a file that was added to project can be renamed
+        rename_button = self.get_element(By.CSS_SELECTOR,
+            '#files_list .rename-file-button')
+        rename_button.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.visibility_of(
+                self.get_element(By.ID, "filenameModal")
+            )
+        )
+        filename = self.driver.find_element_by_id("newFilename")
+        filename.clear()
+        filename.send_keys('test.txt')
+        save_button = self.get_element(By.ID, 'renamebutton')
+        save_button.click()
+        operation_output = self.get_element(By.ID, "operation_output")
+        assert 'File successfully renamed.' in operation_output.text
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, "filenameModal")
+            )
+        )
+        assert 'test.txt' in self.driver.page_source
+
     def test_delete_file(self):
         """Tests file delete modal """
-        delete_file_button = self.get_element(By.CLASS_NAME, 'delete-file-button')
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR,
+            '#files_list .delete-file-button .icon-remove')
+            )
+        )
+        delete_file_button = self.get_element(By.CSS_SELECTOR,
+            '#files_list .delete-file-button .icon-remove')
         delete_file_button.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.visibility_of(
