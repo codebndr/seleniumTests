@@ -150,6 +150,30 @@ class TestSketch(SeleniumTestCase):
         )
         assert 'test_file.txt' in self.driver.page_source
 
+    def test_rename_projectfile_direct(self):
+        # Tests that a file that was added to project can be renamed
+        rename_button = self.get_element(By.CSS_SELECTOR,
+            '#files_list .rename-file-button')
+        rename_button.click()
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.visibility_of(
+                self.get_element(By.ID, "filenameModal")
+            )
+        )
+        filename = self.driver.find_element_by_id("newFilename")
+        filename.clear()
+        filename.send_keys('test.txt')
+        save_button = self.get_element(By.ID, 'renamebutton')
+        save_button.click()
+        operation_output = self.get_element(By.ID, "operation_output")
+        assert 'File successfully renamed.' in operation_output.text
+        WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, "filenameModal")
+            )
+        )
+        assert 'test.txt' in self.driver.page_source
+
     def test_delete_file(self):
         """Tests file delete modal """
         delete_file_button = self.get_element(By.CLASS_NAME, 'delete-file-button')
