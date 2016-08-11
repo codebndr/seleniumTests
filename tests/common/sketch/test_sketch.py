@@ -30,6 +30,8 @@ class TestSketch(SeleniumTestCase):
 
     def test_rename_project(self):
         self.change_name_editor(TEST_PROJECT_NAME)
+        sketchHeading = self.get_element(By.ID, 'editor_heading_project_name')
+        assert sketchHeading.text == TEST_PROJECT_NAME
 
     def test_change_short_description(self):
         self.change_short_description_editor('description')
