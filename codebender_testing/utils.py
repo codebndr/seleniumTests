@@ -880,10 +880,10 @@ class CodebenderSeleniumBot(object):
         createSketchBtn = self.get_element(By.ID, 'create_sketch_btn')
         createSketchBtn.click()
         WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
-                expected_conditions.visibility_of_element_located(
-                    (By.CSS_SELECTOR, "#create-sketch-modal")
-                )
+            expected_conditions.visibility_of_element_located(
+                (By.CSS_SELECTOR, "#create-sketch-modal")
             )
+        )
 
         self.change_privacy(privacy)
 
@@ -942,31 +942,31 @@ class CodebenderSeleniumBot(object):
         )
 
     def change_short_description(self, description):
-        nameField = self.get_element(By.CSS_SELECTOR,'#create-sketch-modal-sort-description')
+        nameField = self.get_element(By.CSS_SELECTOR, '#create-sketch-modal-short-description')
         nameField.clear()
         nameField.send_keys(description)
         nameField.send_keys(Keys.ENTER)
 
     def change_short_description_editor(self, description):
-        editDescription = self.get_element(By.CSS_SELECTOR,'.short-description-edit')
+        editDescription = self.get_element(By.CSS_SELECTOR, '.short-description-edit')
         editDescription.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.visibility_of(
                 self.get_element(By.CSS_SELECTOR, '#editor-description-modal')
             )
         )
-        shortDescriptionField = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-body [id="short-description-modal-input"]')
+        shortDescriptionField = self.get_element(By.CSS_SELECTOR, '#editor-description-modal .modal-body [id="short-description-modal-input"]')
         shortDescriptionField.clear()
         shortDescriptionField.send_keys(description)
         shortDescriptionField.send_keys(Keys.ENTER)
-        saveButton = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-footer .btn-success')
+        saveButton = self.get_element(By.CSS_SELECTOR, '#editor-description-modal .modal-footer .btn-success')
         saveButton.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.text_to_be_present_in_element(
-                (By.CSS_SELECTOR,'#editor-description-modal .modal-footer #editor-description-modal-message'), 'Sketch description saved.'
+                (By.CSS_SELECTOR, '#editor-description-modal .modal-footer #editor-description-modal-message'), 'Sketch description saved.'
             )
         )
-        closeButton = self.get_element(By.CSS_SELECTOR,'#editor-description-modal .modal-footer .btn-danger')
+        closeButton = self.get_element(By.CSS_SELECTOR, '#editor-description-modal .modal-footer .btn-danger')
         closeButton.click()
         WebDriverWait(self.driver, VERIFY_TIMEOUT).until(
             expected_conditions.invisibility_of_element_located(

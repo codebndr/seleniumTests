@@ -176,3 +176,4 @@ class TestSketch(SeleniumTestCase):
 
     def test_remove_sketch(self):
         self.delete_project(TEST_PROJECT_NAME)
+        self.delete_project(TEST_PROJECT_NAME + '_initial copy')
