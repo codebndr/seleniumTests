@@ -147,6 +147,7 @@ def create_webdriver(command_executor, desired_capabilities):
     browser_profile = None
     browser_profile_path = None
 
+    global SELENIUM_BROWSER
     SELENIUM_BROWSER = browser_name
 
     if browser_name == "chrome":

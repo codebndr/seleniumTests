@@ -20,6 +20,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 
 from codebender_testing.config import BASE_URL
 from codebender_testing.config import TIMEOUT
@@ -893,12 +894,16 @@ class CodebenderSeleniumBot(object):
 
         createBtn = self.get_element(By.ID, 'create-sketch-modal-action-button')
         createBtn.click()
-
-        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
-            expected_conditions.visibility_of_element_located(
-                (By.CSS_SELECTOR, "#editor-loading-screen")
+        # Added in try-except block because if the loading screen disappears too quickly
+        # the explicit wait will through an exception
+        try:
+            WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CSS_SELECTOR, "#editor-loading-screen")
+                )
             )
-        )
+        except TimeoutException:
+            pass
         WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
             expected_conditions.invisibility_of_element_located(
                 (By.CSS_SELECTOR, "#editor-loading-screen")
@@ -1006,6 +1011,59 @@ class CodebenderSeleniumBot(object):
         iframe = self.driver.find_elements_by_tag_name('iframe')[index]
         self.driver.switch_to_frame(iframe)
 
+    def create_file(self, filename):
+        """ Creates a file in editor """
+        self.get_element(By.ID, 'newfile').click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_element_located(
+                (By.ID, 'creationModal'))
+        )
+        self.get_element(By.ID, 'createfield').send_keys(filename)
+        self.get_element(By.ID, 'createfield').send_keys(Keys.ENTER)
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, 'creationModal'))
+        )
+
+    def remove_file(self, filename):
+        self.get_element(By.CSS_SELECTOR, '#files_list .filelist[data-name="{}"] + .delete-file-button'.format(filename)).click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_element_located(
+                (By.ID, 'filedeleteModal'))
+        )
+        self.get_element(By.ID, 'filedeleteButton').click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, 'filedeleteModal'))
+        )
+
+    def rename_file(self, old_filename, new_filename):
+        self.get_element(By.CSS_SELECTOR, '#files_list .filelist[data-name="{}"] ~ .rename-file-button'.format(old_filename)).click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_element_located(
+                (By.ID, 'filenameModal'))
+        )
+        filename_input = self.get_element(By.ID, 'newFilename')
+        filename_input.clear()
+        filename_input.send_keys(new_filename)
+        filename_input.send_keys(Keys.ENTER)
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.invisibility_of_element_located(
+                (By.ID, 'filenameModal'))
+        )
+
+    def remove_sketch_editor(self):
+        """ Removes the sketch from editor page """
+        self.get_element(By.ID, 'delete').click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_element_located(
+                (By.ID, 'deletionModal'))
+        )
+        self.get_element(By.ID, 'deleteProjectButton').click()
+        WebDriverWait(self.driver, TIMEOUT['LOCATE_ELEMENT']).until(
+            expected_conditions.visibility_of_element_located(
+                (By.ID, 'main-container'))
+        )
 
 class SeleniumTestCase(CodebenderSeleniumBot):
     """Base class for all Selenium tests."""
